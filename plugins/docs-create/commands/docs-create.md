@@ -14,7 +14,7 @@ End-to-end orchestrator. Detects the source type (or absence of one), picks the 
    - `docs-from-scratch` (Sonnet) — **when the user has no source yet**, only a topic. Researches 3–5 competitors and writes original docs following domain conventions.
 2. `docs-content-enricher` (Haiku, optional) — adds competitor comparisons, educational topic cluster, glossary + use-cases, and migration guides on top of the crawled docs
 3. `docs-publisher` (Haiku) → creates GitHub repo and pushes
-4. `docs-workspace-configurator` (Sonnet) → applies branding/UI/AI/SEO via Docsbook MCP
+4. `docs-workspace-configurator` (Sonnet) → applies branding/UI/AI/SEO/GEO/AEO via Docsbook MCP
 
 This command does not contain any crawl, git, or MCP logic itself — it only routes the source, then passes outputs of one subagent into the input of the next.
 
@@ -31,7 +31,7 @@ This command also reads and writes Claude memory at key checkpoints (see "Memory
 Before Step 0, read the user's project memory directory (path is in `CLAUDE.md` under `auto memory` — typically `~/.claude/projects/<project-slug>/memory/`):
 
 - Check `MEMORY.md` for entries tagged with `project_docsbook_*`, `feedback_docs_style_*`, `reference_docs_workspace_*`. Read any matching file.
-- If a project memory entry already describes the user's topic/niche/audience, **pre-fill** that into the no-source flow so you don't ask the user again. Surface it as: `Using your saved project context: <topic> for <audience>. Edit? [y/N]`.
+- If a project memory entry already describes the user's topic/problem/differentiator/audience, **pre-fill** those into the no-source flow so you don't ask the user again. Surface it as: `Using your saved project context: <topic> for <audience>. Edit? [y/N]`.
 - If a feedback memory entry describes docs-style preferences (tone, length, structure), apply them silently to whichever subagent runs.
 
 During and after the pipeline, write memories at the points marked **[memory]** in the steps below. Use the format from the user's global memory instructions (one file per memory + index entry in `MEMORY.md`). Never write secrets, GitHub tokens, or anything ephemeral.
@@ -40,17 +40,18 @@ During and after the pipeline, write memories at the points marked **[memory]** 
 
 Run `gh auth status`. Capture the result as `ghReady` (true/false) but **do not stop** if it fails — the crawl step works without it and the user gets to see their docs locally before being asked to authenticate. Only the publish step needs `gh`.
 
-## Step 0 — No-source flow (skip if `$ARGUMENTS[0]` is set)
+## Step 0 — No-source flow basics (skip if `$ARGUMENTS[0]` is set)
 
 If `$ARGUMENTS[0]` is empty, the user wants docs but has nothing to crawl. Collect what's needed to do research-based generation, then route to `docs-from-scratch` in Step 1.
 
-First check project memory for a saved `topic` (see "Memory usage" above). If one exists, ask:
+This step collects only what's **specific to no-source** (topic + name + audience + competitor hints). The `problem` and `differentiator` questions are shared with URL/repo flows and live in Step 0.1 below.
+
+First check project memory for saved context (see "Memory usage" above). If one exists, ask:
 
 ```
 I have your saved project context:
-  Topic:    <topic>
-  Audience: <audience>
-  Niche:    <category>
+  Topic:           <topic>
+  Audience:        <audience>
 
 Use this? [Y/edit/new]
 ```
@@ -59,9 +60,9 @@ Use this? [Y/edit/new]
 - `edit`: ask the questions below pre-filled with saved answers.
 - `new`: start fresh.
 
-If no saved context (or user chose `new`/`edit`), use `AskUserQuestion`:
+If no saved context (or user chose `new`/`edit`), use `AskUserQuestion` for each of the questions below.
 
-1. **Topic** (required, free text via "Other"):
+1. **Topic** (required):
    ```
    What does your project do? (one sentence)
    Example: "AI email assistant for B2B sales teams"
@@ -86,22 +87,91 @@ If no saved context (or user chose `new`/`edit`), use `AskUserQuestion`:
    Any competitors you already know about? (comma-separated, optional)
    ```
 
-Capture all answers. Print the routing decision: `No source provided → researching competitors and generating docs from scratch.`
+Capture all answers. Print the routing decision: `No source provided → researching competitors and generating docs from scratch.` Continue to Step 0.1.
 
-**[memory]** Write a `project` memory now (before the agent runs) capturing the user's topic, name, and audience:
+## Step 0.1 — Positioning questions (ALL routes — no-source AND URL/GitHub/platform)
 
-- File: `project_docsbook_<name>.md`
-- Frontmatter: `name: docsbook-project-<name>`, `description: User's docs project: <topic> for <audience>`, `metadata.type: project`
-- Body: lead with the topic + audience fact, then `**Why:**` (user is building docs via /docs-create) and `**How to apply:**` (when the user runs any /docs-* command, default to this project unless they say otherwise).
+This step runs for **every** route, not just no-source. The reason: `problem` and `differentiator` are the foundation for the README opening, the quick-start hook, the AI chat system prompt, the SEO meta description, and the competitor pages. Bad answers here = generic docs no matter which builder agent runs.
+
+For URL/repo flows, we can't reliably extract these from marketing copy (sites usually lead with feature lists, not pain or leverage), so we ask the user directly **before crawl** — that way the builder agent has them in hand and can shape the docs around them from the start, rather than re-writing afterward.
+
+First check project memory (see "Memory usage"). If a `project_docsbook_*` entry has `problem` and `differentiator`, ask:
+
+```
+I have your saved positioning:
+  Problem:         <problem>
+  Differentiator:  <differentiator>
+
+Use this? [Y/edit/skip]
+```
+
+- `Y` (default): proceed with saved values.
+- `edit`: ask the two questions below pre-filled.
+- `skip`: set `problem: null`, `differentiator: null` and continue (generic docs; agent does its best).
+
+If no saved context (or user chose `edit`/`skip`), use `AskUserQuestion`. Both are recommended but skippable.
+
+1. **Problem** (recommended — drives README/positioning):
+   ```
+   What real problem does it solve? (one sentence — the pain users feel TODAY without your product)
+   Example: "Sales reps spend 3+ hours/day writing cold emails that get 1% reply rates."
+
+   Leave blank to skip (agents will derive from <source/topic>).
+   ```
+   If the user gave an answer shorter than 15 chars, doesn't describe a pain, or just restates the topic ("it helps with emails"), re-ask once: `That describes what the product is, not the pain. What goes wrong for users without it?`. After a second vague answer, accept whatever they give but flag `warnings: ["problem_vague — generic positioning"]` later. If empty → `problem: null`.
+
+2. **Differentiator** (recommended — point of leverage vs competitors):
+   ```
+   What do you do that existing solutions DON'T? (one sentence — your point of leverage)
+   Example: "We learn each prospect's last 5 LinkedIn posts and tailor the opener — Apollo just uses templates."
+
+   Leave blank to skip (agents will derive a tentative one from competitor research, marked TODO).
+   ```
+   If the user answers "I don't know" or leaves it blank: print `OK — I'll derive a tentative differentiator from competitor research and mark it TODO. You can edit later in the workspace.` and set `differentiator: null`.
+
+Store both as `problem` and `differentiator` (each may be a string or `null`). These get passed to **every** builder agent in Step 1 (so the agent shapes the README/quick-start lead from the start, rather than us rewriting after the crawl) and to the AI system prompt + SEO description generator in Step 3.5.
+
+**[memory]** Write/update the project memory now with the collected positioning:
+
+- File: `project_docsbook_<name>.md` (use `name` from Step 0 for no-source flow; for URL/repo, derive `<name>` from the source's repo basename or hostname).
+- Frontmatter: `name: docsbook-project-<name>`, `description: User's docs project: <topic or source> for <audience>`, `metadata.type: project`
+- Body: lead with the topic / source URL. Add `**Problem:** <problem>` and `**Differentiator:** <differentiator>` on their own lines if non-null (these are load-bearing for downstream copywriting). Skip the lines entirely if null — do not write `**Problem:** null`. Then `**Why:**` (user is building docs via /docs-create) and `**How to apply:**` (when the user runs any /docs-* command, default to this project unless they say otherwise; use problem+differentiator as the opening hook in any generated README/quick-start).
 - Add a one-line entry to `MEMORY.md` index.
 
 Skip the write silently if an identical entry already exists. Update the existing entry if details changed.
 
-## Step 0.5 — Ask about content enrichment
+## Step 0.25 — Decide output path
 
-## Pre-flight
+Before Step 0.5 (enrichment) and Step 1 (crawl), pick where the docs folder will live. This replaces the previous hardcoded `docs-output/<name>/` default, which surprised users by creating a folder inside their own project.
 
-Run `gh auth status`. Capture the result as `ghReady` (true/false) but **do not stop** if it fails — the crawl step works without it and the user gets to see their docs locally before being asked to authenticate. Only the publish step needs `gh`.
+Run this detection inline (no subagent):
+
+1. **Read cwd state** — `pwd` to get the path, then `ls -A` to see what's in it.
+2. **Decide default `outputPath`:**
+
+   | cwd state | Default `outputPath` |
+   |---|---|
+   | Empty directory (no files/folders or only `.git`, `.gitignore`) | `./` |
+   | cwd basename contains `doc` / `docs` / `documentation` (case-insensitive) | `./` |
+   | cwd has `package.json` / `pyproject.toml` / `go.mod` / `Cargo.toml` (looks like a code repo) AND no existing `docs/` | `./docs/` |
+   | cwd has an existing `docs/` folder | `./docs/` (will write **alongside** existing files; agent must not delete pre-existing files) |
+   | Source is a remote GitHub URL and cwd is unrelated (e.g. user is in their own dotfiles) | `docs-output/<name>/` |
+   | Anything ambiguous | Ask via `AskUserQuestion` |
+
+3. **Confirm with the user** — only if the default is ambiguous (mixed signals, e.g. cwd has both source code and a `docs/` folder, or cwd basename is unclear). Use `AskUserQuestion` with three options: detected default (recommended), `./`, alternative path. Skip the question when the default is obvious.
+
+4. Print the decision before continuing:
+   ```
+   Output path: <outputPath>  (cwd: <pwd>)
+   ```
+
+Store as `outputPath`. **Pass it to every downstream subagent** in their input JSON (replacing the old hardcoded `docs-output/<name>/`). Subagents that previously wrote to `docs-output/<name>/` will now write to `<outputPath>` directly.
+
+If `outputPath` is `./` or `./docs/` and the folder already contains markdown files, warn the user before crawl:
+```
+⚠️  <outputPath> already contains <N> markdown files. New files will be added alongside — existing files will not be overwritten unless they have the same path.
+Continue? [Y/n]
+```
 
 ## Step 0.5 — Ask about content enrichment
 
@@ -159,12 +229,12 @@ Classify the source inline (no subagent — this is cheap):
 
 3. **Local path** → if it contains any marker above → `docs-platform-importer`; if it contains `package.json` / `pyproject.toml` / `go.mod` / `Cargo.toml` → `docs-code-crawler`; otherwise refuse with `Local path doesn't look like a code repo or docs platform. Pass a URL instead, or omit the argument to generate from a topic.`
 
-Invoke the chosen subagent with the input shape it expects:
+Invoke the chosen subagent with the input shape it expects. **Always include `outputPath`** (from Step 0.25) and the positioning fields **`problem`** + **`differentiator`** (from Step 0.1) — every agent uses them to shape the README/quick-start lead. Pass them as `null` when the user skipped:
 
-- `docs-from-scratch`: `{"topic":"<topic>","name":"<name>","audience":"<audience>","competitorsHint":<array>,"language":"en"}`
-- `docs-site-crawler`: `{"url":"<url>","name":"<name>","sourceUrl":"<url>"}`
-- `docs-code-crawler`: `{"source":"<github-url-or-path>","name":"<name>","sourceUrl":"<source>"}`
-- `docs-platform-importer`: `{"source":"<github-url-or-path>","name":"<name>","sourceUrl":"<source>"}`
+- `docs-from-scratch`: `{"topic":"<topic>","problem":<problem>,"differentiator":<differentiator>,"name":"<name>","audience":"<audience>","competitorsHint":<array>,"language":"en","outputPath":"<outputPath>"}`
+- `docs-site-crawler`: `{"url":"<url>","name":"<name>","sourceUrl":"<url>","problem":<problem>,"differentiator":<differentiator>,"outputPath":"<outputPath>"}`
+- `docs-code-crawler`: `{"source":"<github-url-or-path>","name":"<name>","sourceUrl":"<source>","problem":<problem>,"differentiator":<differentiator>,"outputPath":"<outputPath>"}`
+- `docs-platform-importer`: `{"source":"<github-url-or-path>","name":"<name>","sourceUrl":"<source>","problem":<problem>,"differentiator":<differentiator>,"outputPath":"<outputPath>"}`
 
 Print the routing decision before the call: `Detected: <type> → invoking <subagent>`.
 
@@ -222,14 +292,37 @@ Print a real preview so the user can decide with eyes open, not blind:
 2. Pick up to 3 representative pages — `README.md` first, then the largest two `.md` files. If enrichment ran, also print the first 15 lines of one enriched page (pick the first one from `generated.competitor-vs` or whatever non-empty section comes first). Each excerpt as a fenced block prefixed with the relative path.
 3. Print the one-line summary (`<pages> core pages + <enriched> marketing pages, branding: <accent> <scheme>, favicon: <yes/no>`).
 4. If `ghReady` is false: print `⚠️  gh not authenticated — run \`gh auth login\` then \`/docs-publish <path>\` to publish.` and **stop here cleanly** with `status: crawl_only`. Do not ask about publishing.
-5. If `ghReady` is true: ask `Publish to GitHub as <owner>/<repo>? [y/N]`. On no, stop with the path printed so the user can edit and run `/docs-publish` later.
+5. If `ghReady` is true: explain the consequences before asking. Publishing means the docs become a real public site on `docsbook.io/<owner>/<repo>`, indexed by Google and cited by AI search engines.
+
+   Print this verbatim (substitute values), then ask:
+
+   ```
+   Publishing options:
+
+   [public + Docsbook hosted]  → docsbook.io/<owner>/<repo>
+     Crawled by Google. Cited by ChatGPT / Perplexity / Gemini.
+     Free plan. Anyone with the URL can read it.
+     ✓ Best if you want SEO traffic and AI discoverability.
+
+   [private repo + Docsbook PRO]  → docs.<your-domain>.com (PRO only)
+     Hosted on your custom domain. Not indexed by search engines unless you choose.
+     Requires a Docsbook PRO subscription on the workspace.
+     ✓ Best for internal docs, customer-only knowledge bases, or pre-launch products.
+
+   [local only]  → keep at <path>, no push
+     I will not touch GitHub. You can publish later with /docs-publish.
+
+   Which one?  [public / private / local]   (default: public)
+   ```
+
+   Capture as `publishMode`. If `public` → continue to Step 3 with `private: false`. If `private` → continue to Step 3 with `private: true` and print a follow-up note: `Note: the workspace must be on Docsbook PRO before private repos are hosted. Free workspaces can still browse the docs on GitHub.` If `local` → stop with `status: crawl_only` and print the path + manual next steps.
 
 ## Step 3 — Publish
 
 Invoke `docs-publisher` with:
 
 ```json
-{"path":"<path>","owner":"<owner>","repo":"<repo>","description":"<derived>","private":false}
+{"path":"<path>","owner":"<owner>","repo":"<repo>","description":"<derived>","private":<publishMode === "private">}
 ```
 
 Capture `githubUrl` and `docsbookUrl`. On error, print and stop — the workspace step needs the repo to exist.
@@ -241,30 +334,121 @@ Capture `githubUrl` and `docsbookUrl`. On error, print and stop — the workspac
 - Body: list `githubUrl`, `docsbookUrl`, and the local path. One sentence on when to look here (e.g. "When the user asks about updating, redeploying, or fixing the docs for <name>, this is the canonical location").
 - Link via `[[docsbook-project-<name>]]`.
 
+## Step 3.5 — Generate workspace settings (pre-fill for Step 4)
+
+Before showing the confirm-block in Step 4, derive concrete values for everything the configurator will push. Generating them HERE (in the orchestrator, with access to research + folder structure) means the user sees real previews — not placeholders — and the configurator stays a thin executor.
+
+Build these in memory, do not write to disk yet:
+
+1. **Subheader folders** (`subheaderFolders`) — read top-level directories of `<path>`. Whitelist user-facing folders, drop infrastructure:
+   - **Include:** `guides/`, `api/`, `reference/`, `blog/`, `learn/`, `glossary/`, `use-cases/`, `tutorials/`, `concepts/`, `integrations/`, `migration/` (only if they exist AND have ≥1 `.md`)
+   - **Always include:** "Home" → `/` (first slot)
+   - **Drop:** anything starting with `.` or `_`, and `assets/`, `images/`, `examples/` (raw files, not pages)
+   - Cap at 6 items. If user has >6 candidate folders, take the first 6 alphabetically.
+   - Render as: `[{label:"Home",url:"/"},{label:"Guides",url:"/guides"},{label:"API",url:"/api"},...]` — labels are Title-Cased from the folder name.
+
+2. **AI custom questions** (`aiCustomQuestions`) — 4 starter-questions a new visitor might ask. Generate from:
+   - The topic + `problem` + JTBD (from `_research.json` if `docs-from-scratch` ran, otherwise from the user's Step 0 / 0.1 answers + the crawled README/landing intro)
+   - The names of the top 3 guides/pages by size
+
+   Each question must be specific (not "What is this?") and answerable from the docs. Examples for a sales-email product:
+   - "How do I import my prospect list from Apollo?"
+   - "What's the deliverability score and how is it calculated?"
+   - "Can I A/B test subject lines?"
+   - "How do I export sequences as CSV?"
+
+   If you cannot derive 4 concrete questions (no research, no guides), generate 2 generic ones tagged with the topic and warn `aiCustomQuestions: ["fallback — only 2 generic questions, refine in workspace"]`.
+
+3. **AI system prompt** (`aiSystemPrompt`) — one short paragraph that primes the chatbot with positioning, audience, and tone. Template:
+
+   ```
+   You are the documentation assistant for <name>, <topic>.
+
+   Your users are <audience>. They come to the docs to <primary JTBD from research or topic>.
+
+   <name>'s point of leverage vs alternatives: <differentiator or "see /blog comparison posts">.
+
+   Tone: <toneSignals joined> — match the voice of the docs themselves. Never invent product features. If the answer isn't in the docs, say so and link to the closest page.
+   ```
+
+   Substitute every `<...>` with real values. If `differentiator` is null (user skipped in Step 0.1), drop that sentence entirely instead of leaving a placeholder.
+
+4. **SEO / GEO / AEO toggles** — three independent booleans, all default `true` (the user can flip them in Step 4):
+   - `enableSeo` — sitemap, robots, page meta, OG tags. Almost always wanted.
+   - `enableGeo` — Generative Engine Optimization: structured AI-friendly content, llms.txt, citation hooks. Almost always wanted.
+   - `enableAeo` — Answer Engine Optimization: FAQ schema, featured-snippet shaped paragraphs, voice-search structure. Wanted unless docs are highly technical/API-only.
+
+   Pre-fill `seoTitle` as `<name> — <topic shortened to ≤60 chars>` and `seoDescription` as `<problem in plain language, ≤155 chars>`. `topic` comes from Step 0 (no-source) or is derived from the crawled `<title>` / repo description; `problem` comes from Step 0.1 for all routes. If `problem` is null, fall back to the README.md first paragraph.
+
+Store all of the above in scope for Step 4.
+
 ## Step 4 — Confirm workspace settings, then configure
 
-Before invoking the configurator, print the settings about to be applied and ask for confirmation:
+Print **one big confirm-block** with all the pre-filled values from Step 3.5 so the user sees exactly what will land in the workspace. No mystery, no plan-gated surprises hidden inside the configurator.
 
 ```
 Docsbook workspace will be configured:
-  • Branding: accent <accentColor>, scheme <detectedScheme>
-  • UI: standard preset (theme toggle, breadcrumbs, copy button, page feedback)
-  • Navigation: + "Website" header link → <sourceUrl>
-  • AI chat: enabled (PRO-gated)
-  • SEO: enabled (PRO-gated)
-  • Languages: en, zh, ja, ru (PRO-gated)
+
+  Branding
+    • Accent color: <accentColor>
+    • Scheme: <detectedScheme> (theme toggle: <yes/no>)
+    • Favicon: <yes/no>
+
+  UI (standard preset)
+    • Theme toggle, breadcrumbs, prev/next, copy button, page feedback, search button
+
+  Subheader navigation
+    <list of subheaderFolders as "  → Label (url)">
+
+  AI chat
+    • Enabled (PRO-gated)
+    • System prompt:
+        <aiSystemPrompt — print first 200 chars + "..." if longer>
+    • Custom starter questions:
+        <list aiCustomQuestions as "  → "question"">
+
+  SEO / GEO / AEO  (all PRO-gated)
+    • SEO  [<X> enable]   title: <seoTitle>
+                         desc:  <seoDescription>
+    • GEO  [<X> enable]   llms.txt + AI citation hooks
+    • AEO  [<X> enable]   FAQ schema + featured-snippet structure
+
+  Languages (PRO-gated)
+    • en, zh, ja, ru
+
+  Source link
+    • Header link "Website" → <sourceUrl>  (skipped if no source)
 
 Apply all? [Y/n/customize]
 ```
 
 - On `Y` (or empty): proceed with the full payload below.
 - On `n`: skip Step 4 entirely; print `Workspace not configured — run /docs-setup-workspace <owner>/<repo> later.` and jump to Final output.
-- On `customize`: ask which sections to enable as a comma-separated list (`branding,ui,navigation,ai,seo,languages`). Pass only the chosen sections in a new `sections` field.
+- On `customize`: ask the user what to change via a follow-up `AskUserQuestion` with these toggles:
+  - Disable SEO / GEO / AEO individually
+  - Edit AI system prompt (open the rendered prompt in a text response, accept new text)
+  - Edit AI custom questions (same)
+  - Replace subheader folders (accept comma-separated label:url pairs)
+  - Drop a whole section (`branding`, `ui`, `navigation`, `ai`, `seo`, `languages`)
+
+  Apply the user's edits to the payload and re-print the updated confirm-block. Loop until they say `Y` or `n`.
 
 Invoke `docs-workspace-configurator` with:
 
 ```json
-{"owner":"<owner>","repo":"<repo>","path":"<path>","sourceUrl":"<url>","sections":["branding","ui","navigation","ai","seo","languages"]}
+{
+  "owner": "<owner>",
+  "repo": "<repo>",
+  "path": "<path>",
+  "sourceUrl": "<url>",
+  "sections": ["branding","ui","navigation","ai","seo","geo","aeo","languages"],
+  "subheaderFolders": <subheaderFolders>,
+  "aiSystemPrompt": "<aiSystemPrompt>",
+  "aiCustomQuestions": <aiCustomQuestions>,
+  "seo": {"enabled": <enableSeo>, "title": "<seoTitle>", "description": "<seoDescription>"},
+  "geo": {"enabled": <enableGeo>},
+  "aeo": {"enabled": <enableAeo>}
+}
 ```
 
 This is the only Sonnet step in the chain — it deals with stateful MCP writes and plan-gated errors.
