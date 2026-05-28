@@ -29,6 +29,18 @@
       },
       "keywords": ["docs", "crawl", "publish", "github", "docsbook", "subagents", "haiku", "sonnet", "markdown", "mcp"],
       "license": "MIT"
+    },
+    {
+      "name": "docs-insights",
+      "source": "./plugins/docs-insights",
+      "description": "Recurring analytics pipeline over the Docsbook MCP. Four pinned subagents (collector → clusterer → reporter → archivist) produce schema-validated JSON insight reports under .docsbook/insights/ on a configurable schedule. Designed so downstream actor agents can consume the JSON to drive Issues, edits, AI-chat tuning.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Dan Bondarev",
+        "url": "https://github.com/Docsbook-io"
+      },
+      "keywords": ["docs", "analytics", "observability", "insights", "utm", "engagement", "funnel", "ai-chat", "subagents", "haiku", "sonnet", "mcp", "schedule", "automation", "docsbook"],
+      "license": "MIT"
     }
   ]
 }

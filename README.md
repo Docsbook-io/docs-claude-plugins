@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Claude Code only](https://img.shields.io/badge/Claude%20Code-only-orange.svg)](#)
 
-[docs-sync](#docs-sync--pre-push-drift-detection) • [docs-create](#docs-create--end-to-end-docs-bootstrap) • [How It Fits Together](#how-it-fits-together) • [Troubleshooting](#troubleshooting)
+[docs-sync](#docs-sync--pre-push-drift-detection) • [docs-create](#docs-create--end-to-end-docs-bootstrap) • [docs-insights](#docs-insights--recurring-analytics-pipeline) • [How It Fits Together](#how-it-fits-together) • [Troubleshooting](#troubleshooting)
 
 </div>
 
@@ -22,12 +22,13 @@ Setting up the fix is painful: wire up subagents by hand, edit `.mcp.json`, writ
 
 ## The Solution
 
-Two plugins. One command each. Every piece — subagents, MCP servers, git hooks — wired automatically on install.
+Three plugins. One command each. Every piece — subagents, MCP servers, git hooks — wired automatically on install.
 
 | Plugin | What it does |
 |---|---|
 | **`docs-sync`** | Pre-push `code↔docs` drift detection: planner → searcher → editor → curator. |
 | **`docs-create`** | End-to-end docs bootstrap from a URL: crawl → publish to GitHub → configure Docsbook workspace. |
+| **`docs-insights`** | Recurring analytics pipeline: collector → clusterer → reporter → archivist. Produces schema-validated JSON reports under `.docsbook/insights/` so future actor agents can act on them. |
 
 ---
 
@@ -47,7 +48,13 @@ Plugin (docs-claude-plugins) = bundle       — everything together, one command
 - **Use [docs-subagents](https://github.com/Docsbook-io/docs-subagents) directly** if you want control — pick only the agents you need, configure MCP yourself.
 - **Use [docs-skills](https://github.com/Docsbook-io/docs-skills) directly** if you want to teach your agent — SKILL.md files work in Cursor, Codex, Copilot, and any Claude-based tool.
 
-The three layers don't conflict. Running all three gives you agents (from the plugin), the same agent files again (from `docs-subagents`, harmlessly overwriting), and a separate set of SKILL.md guides (from `docs-skills`).
+The three layers don't conflict. Running all three gives you:
+
+- Agents from the plugin (richer versions, evolve with plugin commands like `/docs-sync` intent mode or `/docs-insights-setup`).
+- Agents from `docs-subagents` (standalone-friendly minimal versions of the same names).
+- A separate set of SKILL.md guides from `docs-skills`.
+
+**The plugin and standalone versions of the same subagent are intentionally not byte-identical.** Plugin versions reference plugin-specific commands and config files (`.docsbook/insights/.config.json`, MCP bundled in `.mcp.json`). Standalone versions are simpler and assume the user invokes them manually. Both honor the same input/output contract (e.g. `WROTE:`, `CLUSTERED:`, `REPORT_JSON:` final-line conventions), so swapping one for the other is safe within a pipeline. If both end up in `.claude/agents/` because the user installed both, the second install backs up the first — pick the version that matches how you're invoking it.
 
 ---
 
@@ -234,6 +241,99 @@ The pinned subagents are the *executors*. The matching [docs-skills](https://git
 - [docs-publish skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-publish/SKILL.md)
 - [docs-setup-workspace skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-setup-workspace/SKILL.md)
 - [docs-create skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-create/SKILL.md)
+
+---
+
+## docs-insights — Recurring Analytics Pipeline
+
+Four pinned subagents that walk the Docsbook MCP, produce **machine-readable JSON reports** under `.docsbook/insights/`, and update a `latest/` symlink folder so downstream actor agents (next phase) can dispatch on `findings[].suggested_actions[]` without re-querying analytics. Sets up its own recurring schedule via Claude Code Routines (or generates a GitHub Actions workflow as a fallback). Works on workspaces with PRO or PRO+.
+
+### Install
+
+```
+/plugin marketplace add Docsbook-io/docs-claude-plugins
+/plugin install docs-insights@docs-claude-plugins
+```
+
+This copies the four analyzer subagents into `.claude/agents/`, registers the Docsbook MCP server (HTTP) from the plugin's `.mcp.json`, and ships eight slash commands.
+
+Then run the one-time setup wizard:
+
+```
+/docs-insights-setup
+```
+
+It asks for the workspace, picks which of the six analyzers to enable (default: all), offers a recurring cadence, optionally wires Slack notifications, and writes `.docsbook/insights/.config.json`. Idempotent — re-run to modify the configuration.
+
+### What it produces
+
+```
+.docsbook/insights/
+├── .config.json                                  # written by /docs-insights-setup
+├── 2026-05-28T08-00-00Z__docs-utm-analyzer.json  # machine
+├── 2026-05-28T08-00-00Z__docs-utm-analyzer.md    # human
+├── index.json                                    # flat catalog of all runs
+└── latest/
+    ├── docs-utm-analyzer.json
+    ├── docs-utm-analyzer.md
+    ├── docs-utm-analyzer.diff.json               # what's new since last run
+    └── _summary.md                               # aggregated headlines
+```
+
+Every JSON validates against [`schemas/insight.schema.json`](plugins/docs-insights/schemas/insight.schema.json) — the **stable contract** between today's analyzer agents and tomorrow's actor agents. See [the schema README](plugins/docs-insights/schemas/README.md) for the full design.
+
+### Slash commands
+
+| Command | Purpose |
+|---|---|
+| `/docs-insights-setup` | Interactive one-time setup — workspace, schedule, notifications |
+| `/docs-insights` | Run every enabled analyzer; produce one report per analyzer |
+| `/docs-utm` | Shortcut: only `docs-utm-analyzer` |
+| `/docs-engagement` | Shortcut: only `docs-engagement-analyzer` |
+| `/docs-funnel` | Shortcut: only `docs-funnel-mapper` |
+| `/docs-cohort` | Shortcut: only `docs-visitor-cohort` |
+| `/docs-link-clicks` | Shortcut: only `docs-link-click-analyzer` |
+| `/docs-questions` | Shortcut: only `docs-question-clusterer` |
+
+### Subagents
+
+| Subagent | Model | Job | Tools |
+|---|---|---|---|
+| `analytics-collector` | Haiku | Pull raw rows from Docsbook MCP for one slice (utm/engagement/funnel/cohort/link_clicks/questions/traffic_anomaly) | Bash, Read, Write, all `mcp__docsbook__get_*` and `query_events` |
+| `analytics-clusterer` | Sonnet | Cluster/normalize the dump, compute period-over-period deltas, flag anomalies | Read, Write, Bash |
+| `analytics-reporter` | Sonnet | Emit a schema-validated JSON report + human Markdown sibling, update `latest/` symlinks | Read, Write, Bash |
+| `insights-archivist` | Haiku | Build `index.json`, compute diff against previous run, rotate old reports | Read, Write, Bash, Glob |
+
+The pipeline runs **sequentially per analyzer** (each analyzer fans out internally) to respect Docsbook MCP rate limits.
+
+### Designed for downstream actor agents
+
+The whole plugin **stops at the reporting boundary by design**. It produces structured data; it never edits a doc page, opens an Issue, or updates settings on its own. That action layer is the next phase. The schema is built for it — every finding's `suggested_actions[]` already names the `action_type`, `skill_to_invoke`, and `prompt` a future actor would need:
+
+```json
+"suggested_actions": [
+  {
+    "action_type": "invoke_skill",
+    "skill_to_invoke": "docs-tune-ai-chat",
+    "prompt": "Add explicit guidance about webhook payload shape — 9 user questions clustered around this topic; the existing docs/webhooks.md covers it but the AI chat couldn't find it.",
+    "priority": "p1",
+    "auto_apply_safe": false
+  }
+]
+```
+
+Until the actor ships, the JSON reports are also useful directly: skim the Markdown sibling, feed the JSON to your own scripts, or commit reports to your repo for review.
+
+### Knowledge base
+
+The analyzer subagents are *executors*. The matching skills in [docs-skills/observability/](https://github.com/Docsbook-io/docs-skills/tree/main/skills/observability) are the *knowledge base* — when to run each analyzer, the decision matrices, the guardrails:
+
+- [docs-utm-analyzer](https://github.com/Docsbook-io/docs-skills/blob/main/skills/observability/docs-utm-analyzer/SKILL.md)
+- [docs-engagement-analyzer](https://github.com/Docsbook-io/docs-skills/blob/main/skills/observability/docs-engagement-analyzer/SKILL.md)
+- [docs-funnel-mapper](https://github.com/Docsbook-io/docs-skills/blob/main/skills/observability/docs-funnel-mapper/SKILL.md)
+- [docs-visitor-cohort](https://github.com/Docsbook-io/docs-skills/blob/main/skills/observability/docs-visitor-cohort/SKILL.md)
+- [docs-link-click-analyzer](https://github.com/Docsbook-io/docs-skills/blob/main/skills/observability/docs-link-click-analyzer/SKILL.md)
+- [docs-question-clusterer](https://github.com/Docsbook-io/docs-skills/blob/main/skills/observability/docs-question-clusterer/SKILL.md)
 
 ---
 
