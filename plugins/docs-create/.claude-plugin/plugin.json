@@ -1,7 +1,7 @@
 {
   "name": "docs-create",
-  "version": "0.1.0",
-  "description": "End-to-end docs bootstrap: crawl a product URL with Haiku, publish the result to GitHub, configure the Docsbook workspace via MCP — one /docs-create command, three pinned subagents, two MCP servers.",
+  "version": "0.3.0",
+  "description": "End-to-end docs bootstrap: crawl a product URL with Haiku — or, when no source exists, research competitors and generate docs from a topic with Sonnet. Enrich with marketing pages, publish to GitHub, configure the Docsbook workspace via MCP. Reads and writes Claude memory across runs so future sessions reuse project context.",
   "author": {
     "name": "Dan Bondarev",
     "email": "dan@docsbook.io",
@@ -21,6 +21,10 @@
     "haiku",
     "sonnet",
     "markdown",
-    "mcp"
+    "mcp",
+    "research",
+    "from-scratch",
+    "memory",
+    "enrichment"
   ]
 }
