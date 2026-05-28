@@ -1,29 +1,103 @@
 ---
-description: Full pipeline — crawl a URL, optionally enrich with marketing pages, publish to GitHub, configure the Docsbook workspace
-allowed-tools: Agent, Read, Bash, AskUserQuestion
+description: Full pipeline — crawl a URL (or research from scratch when no source), optionally enrich with marketing pages, publish to GitHub, configure the Docsbook workspace
+allowed-tools: Agent, Read, Write, Bash, AskUserQuestion
 ---
 
 # /docs-create — full crawl → enrich → publish → configure pipeline
 
-End-to-end orchestrator. Detects the source type, picks one of three pinned builder subagents, optionally enriches with marketing-driven pages, then chains publish + configure:
+End-to-end orchestrator. Detects the source type (or absence of one), picks the right builder subagent, optionally enriches with marketing-driven pages, then chains publish + configure:
 
 1. **Source detection** (inline, no subagent — see Step 1) routes to one of:
    - `docs-site-crawler` (Haiku) — for marketing websites
    - `docs-code-crawler` (Haiku) — for GitHub source code repos
    - `docs-platform-importer` (Haiku) — for existing docs on Mintlify / GitBook / Docusaurus / Nextra / VitePress / Starlight
+   - `docs-from-scratch` (Sonnet) — **when the user has no source yet**, only a topic. Researches 3–5 competitors and writes original docs following domain conventions.
 2. `docs-content-enricher` (Haiku, optional) — adds competitor comparisons, educational topic cluster, glossary + use-cases, and migration guides on top of the crawled docs
 3. `docs-publisher` (Haiku) → creates GitHub repo and pushes
 4. `docs-workspace-configurator` (Sonnet) → applies branding/UI/AI/SEO via Docsbook MCP
 
 This command does not contain any crawl, git, or MCP logic itself — it only routes the source, then passes outputs of one subagent into the input of the next.
 
+This command also reads and writes Claude memory at key checkpoints (see "Memory usage" below) so future `/docs-*` sessions can skip re-asking the user about their project, niche, competitors, and the docs they've already built.
+
 ## Arguments
 
-- `$ARGUMENTS[0]` — source: website URL, GitHub repo URL, or local path (required)
-- `$ARGUMENTS[1]` — output name / repo basename (optional; derived from source)
+- `$ARGUMENTS[0]` — source: website URL, GitHub repo URL, or local path (**optional** — if omitted, the command falls into the no-source flow and asks for a topic)
+- `$ARGUMENTS[1]` — output name / repo basename (optional; derived from source or topic)
 - `$ARGUMENTS[2]` — `owner` for GitHub (optional; defaults to authenticated gh user)
 
-If no source is provided, ask the user.
+## Memory usage
+
+Before Step 0, read the user's project memory directory (path is in `CLAUDE.md` under `auto memory` — typically `~/.claude/projects/<project-slug>/memory/`):
+
+- Check `MEMORY.md` for entries tagged with `project_docsbook_*`, `feedback_docs_style_*`, `reference_docs_workspace_*`. Read any matching file.
+- If a project memory entry already describes the user's topic/niche/audience, **pre-fill** that into the no-source flow so you don't ask the user again. Surface it as: `Using your saved project context: <topic> for <audience>. Edit? [y/N]`.
+- If a feedback memory entry describes docs-style preferences (tone, length, structure), apply them silently to whichever subagent runs.
+
+During and after the pipeline, write memories at the points marked **[memory]** in the steps below. Use the format from the user's global memory instructions (one file per memory + index entry in `MEMORY.md`). Never write secrets, GitHub tokens, or anything ephemeral.
+
+## Pre-flight
+
+Run `gh auth status`. Capture the result as `ghReady` (true/false) but **do not stop** if it fails — the crawl step works without it and the user gets to see their docs locally before being asked to authenticate. Only the publish step needs `gh`.
+
+## Step 0 — No-source flow (skip if `$ARGUMENTS[0]` is set)
+
+If `$ARGUMENTS[0]` is empty, the user wants docs but has nothing to crawl. Collect what's needed to do research-based generation, then route to `docs-from-scratch` in Step 1.
+
+First check project memory for a saved `topic` (see "Memory usage" above). If one exists, ask:
+
+```
+I have your saved project context:
+  Topic:    <topic>
+  Audience: <audience>
+  Niche:    <category>
+
+Use this? [Y/edit/new]
+```
+
+- `Y` (default): proceed with saved values.
+- `edit`: ask the questions below pre-filled with saved answers.
+- `new`: start fresh.
+
+If no saved context (or user chose `new`/`edit`), use `AskUserQuestion`:
+
+1. **Topic** (required, free text via "Other"):
+   ```
+   What does your project do? (one sentence)
+   Example: "AI email assistant for B2B sales teams"
+   ```
+   If the answer is shorter than 10 chars or generic ("an app", "a tool"), re-ask once with: `Be more specific — what does it do and who is it for?`. After a second vague answer, stop with: `Topic too vague to research competitors. Try again with a clearer description.`
+
+2. **Name** (optional — skip allowed):
+   ```
+   Project name? (used for the repo and docs folder)
+   Leave blank to derive from topic.
+   ```
+   If blank, slug it from the topic: lowercase, kebab-case, ≤30 chars, drop stopwords (`for`, `a`, `the`, `of`).
+
+3. **Audience** (optional — derive from topic if skipped):
+   ```
+   Who is this for? (one phrase, optional)
+   Example: "B2B sales reps", "indie hackers", "data engineers"
+   ```
+
+4. **Competitor hints** (optional — `docs-from-scratch` will research more):
+   ```
+   Any competitors you already know about? (comma-separated, optional)
+   ```
+
+Capture all answers. Print the routing decision: `No source provided → researching competitors and generating docs from scratch.`
+
+**[memory]** Write a `project` memory now (before the agent runs) capturing the user's topic, name, and audience:
+
+- File: `project_docsbook_<name>.md`
+- Frontmatter: `name: docsbook-project-<name>`, `description: User's docs project: <topic> for <audience>`, `metadata.type: project`
+- Body: lead with the topic + audience fact, then `**Why:**` (user is building docs via /docs-create) and `**How to apply:**` (when the user runs any /docs-* command, default to this project unless they say otherwise).
+- Add a one-line entry to `MEMORY.md` index.
+
+Skip the write silently if an identical entry already exists. Update the existing entry if details changed.
+
+## Step 0.5 — Ask about content enrichment
 
 ## Pre-flight
 
@@ -58,9 +132,15 @@ Capture the selected categories as `enrichSections` (array of strings using thes
 
 If `competitor-vs` or `migration` is selected, ask a quick follow-up via `AskUserQuestion` (text via "Other" path): "Which competitors should I compare against? (comma-separated, or leave blank to auto-detect)". Store as `competitorsHint` (array, possibly empty). The enricher does its own detection if this is blank.
 
-## Step 1 — Detect source, then crawl
+**Memory shortcut:** if a `project_docsbook_<name>_research.md` memory exists from a prior run, pre-fill `competitorsHint` from it and tell the user: `Using competitors from your saved research: <list>. Override? [y/N]`. If they say `y`, ask the question normally.
+
+If the no-source flow ran in Step 0 and `docs-from-scratch` returned a `competitors` list, pass that as `competitorsHint` to the enricher automatically — no need to re-ask.
+
+## Step 1 — Detect source, then crawl (or research from scratch)
 
 Classify the source inline (no subagent — this is cheap):
+
+0. **No source** (came from Step 0) → route to **`docs-from-scratch`**.
 
 1. **GitHub URL** matching `https?://github.com/<owner>/<repo>` or `github.com/<owner>/<repo>` → fetch the repo root via `gh api repos/<owner>/<repo>/contents` (or list a local clone if already present). Look for **docs-platform markers** first:
 
@@ -77,19 +157,29 @@ Classify the source inline (no subagent — this is cheap):
 
 2. **Plain URL** (anything else) → route to **`docs-site-crawler`**.
 
-3. **Local path** → if it contains any marker above → `docs-platform-importer`; if it contains `package.json` / `pyproject.toml` / `go.mod` / `Cargo.toml` → `docs-code-crawler`; otherwise refuse with `Local path doesn't look like a code repo or docs platform. Pass a URL instead.`
+3. **Local path** → if it contains any marker above → `docs-platform-importer`; if it contains `package.json` / `pyproject.toml` / `go.mod` / `Cargo.toml` → `docs-code-crawler`; otherwise refuse with `Local path doesn't look like a code repo or docs platform. Pass a URL instead, or omit the argument to generate from a topic.`
 
 Invoke the chosen subagent with the input shape it expects:
 
+- `docs-from-scratch`: `{"topic":"<topic>","name":"<name>","audience":"<audience>","competitorsHint":<array>,"language":"en"}`
 - `docs-site-crawler`: `{"url":"<url>","name":"<name>","sourceUrl":"<url>"}`
 - `docs-code-crawler`: `{"source":"<github-url-or-path>","name":"<name>","sourceUrl":"<source>"}`
 - `docs-platform-importer`: `{"source":"<github-url-or-path>","name":"<name>","sourceUrl":"<source>"}`
 
 Print the routing decision before the call: `Detected: <type> → invoking <subagent>`.
 
-If the chosen subagent returns `{"status":"error",...}`, surface the `reason` and `hint` verbatim and stop — nothing downstream can run without a docs folder. For `docs-site-crawler` `spa_no_ssr` / `bot_blocked` errors, suggest re-running with the GitHub repo URL if the user has one (`/docs-create https://github.com/<owner>/<repo>`).
+If the chosen subagent returns `{"status":"error",...}`, surface the `reason` and `hint` verbatim and stop — nothing downstream can run without a docs folder. For `docs-site-crawler` `spa_no_ssr` / `bot_blocked` errors, suggest re-running with the GitHub repo URL if the user has one (`/docs-create https://github.com/<owner>/<repo>`). For `docs-from-scratch` `topic_too_vague` / `no_competitors_found`, surface the hint and stop.
 
 Capture `path` from the response for the next step.
+
+**[memory]** If `docs-from-scratch` ran and returned a `research` object (or wrote `<path>/_research.json`), write a `project` memory capturing the competitor set and domain terminology. This prevents future runs from re-researching the same niche:
+
+- File: `project_docsbook_<name>_research.md`
+- Frontmatter: `metadata.type: project`, `description: Researched competitor set and domain terms for <name>`
+- Body: list competitors (with URLs), top domain terms, tone signals. `**Why:**` (research output from /docs-create, expensive to regenerate). `**How to apply:**` (reuse for /docs-content-enricher competitors, for AI chat tuning, for future /docs-create runs on the same project).
+- Link to the project memory via `[[docsbook-project-<name>]]`.
+
+Skip silently if an identical entry exists. Update if competitors changed.
 
 ## Step 1.5 — Enrich content (only if `enrichSections` is non-empty)
 
@@ -144,6 +234,13 @@ Invoke `docs-publisher` with:
 
 Capture `githubUrl` and `docsbookUrl`. On error, print and stop — the workspace step needs the repo to exist.
 
+**[memory]** Write a `reference` memory pointing at the created repo and docs URLs, so future `/docs-*` sessions know where the user's published docs live:
+
+- File: `reference_docs_repo_<name>.md`
+- Frontmatter: `metadata.type: reference`, `description: Published docs for <name> — GitHub repo and Docsbook URL`
+- Body: list `githubUrl`, `docsbookUrl`, and the local path. One sentence on when to look here (e.g. "When the user asks about updating, redeploying, or fixing the docs for <name>, this is the canonical location").
+- Link via `[[docsbook-project-<name>]]`.
+
 ## Step 4 — Confirm workspace settings, then configure
 
 Before invoking the configurator, print the settings about to be applied and ask for confirmation:
@@ -174,9 +271,11 @@ This is the only Sonnet step in the chain — it deals with stateful MCP writes 
 
 If the configurator returns `{"status":"mcp_unavailable",...}`, do not treat it as a hard failure — the docs are already live on GitHub. Print the MCP setup instructions and mark this step as skipped.
 
+**[memory]** If the configurator returned a workspace ID or applied any settings successfully, extend the existing `reference_docs_repo_<name>.md` memory with the workspace ID and which sections were applied. Do not create a separate file — keep all "where it lives" facts in one entry.
+
 ## Final output
 
-Pick the variant that matches how far the pipeline got.
+Pick the variant that matches how far the pipeline got. If the no-source flow ran, replace "Crawl:" with "Research:" and surface the competitor count.
 
 **Full pipeline (publish + workspace applied):**
 
@@ -191,7 +290,23 @@ Publish:   <markdownFiles> markdown files
 Workspace: applied <applied>; plan-gated <planGated>
 ```
 
-Omit the `Enrich:` line if no enrichment ran.
+**Full pipeline, no-source variant:**
+
+```
+✅ Done.
+🐙 GitHub:    <githubUrl>
+📚 Docsbook:  <docsbookUrl>
+
+Research:  <competitorCount> competitors analysed (<competitor list>)
+Generate:  <pages> pages written
+Enrich:    <enrichedPages> marketing pages (<enrichSections joined>)
+Publish:   <markdownFiles> markdown files
+Workspace: applied <applied>; plan-gated <planGated>
+
+⚠️  Some pages contain TODO markers — review and fill in product-specific details before sharing publicly.
+```
+
+Omit the `Enrich:` line if no enrichment ran. Omit the TODO warning if `docs-from-scratch` reported no TODOs.
 
 **Crawl only (no `gh` or user declined publish):**
 
@@ -215,6 +330,20 @@ Workspace not configured. To configure later:
   <instructions from configurator response, verbatim>
 ```
 
+## Memory: capturing style feedback
+
+If during the pipeline the user **corrects** the docs style ("don't use emojis", "make it shorter", "drop the marketing tone", "no competitor pages") or **confirms** a non-obvious choice ("yes, keep the migration guides — that's exactly what I wanted"), write a `feedback` memory:
+
+- File: `feedback_docs_style.md` (one shared file across projects — append, don't fork per-project)
+- Frontmatter: `metadata.type: feedback`, `description: User preferences for docs style and enrichment choices`
+- Body for each rule: lead with the rule, then `**Why:**` (quote the user's reason if given), then `**How to apply:**` (which step in /docs-create or which subagent input this should pre-fill).
+
+If a `feedback_docs_style.md` memory already exists, **read it before Step 0.5** and use it to:
+- Pre-select enrichment options the user has previously approved
+- Adjust the subagent inputs (e.g. add `"toneOverrides": ["no_emojis"]`)
+
+Never offer to save a memory the user did not actually express. A single "Y/N" on a prompt is not feedback unless the user added a reason.
+
 ## Knowledge references
 
 - [`docs-from-site` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-from-site/SKILL.md) — website crawl tips, writing rules
@@ -224,3 +353,4 @@ Workspace not configured. To configure later:
 - [`docs-setup-workspace` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-setup-workspace/SKILL.md) — MCP probe order, plan-gated calls
 - [`docs-create` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-create/SKILL.md) — overall pipeline rationale
 - `docs-content-enricher` agent (local) — generates competitor/vs, learn/, glossary/, use-cases/, and migration pages on top of crawled docs. Honest tone, real evidence only, never fabricates competitors or terms.
+- `docs-from-scratch` agent (local) — when no source URL/repo exists, takes a project topic and researches 3–5 competitors via WebSearch+WebFetch, then writes original docs following the domain's conventions. Marks product-specific claims with TODO so the user can fill them in once the product exists.
