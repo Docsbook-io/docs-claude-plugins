@@ -1,0 +1,22 @@
+{
+  "name": "docs-claude-plugins",
+  "owner": {
+    "name": "Docsbook",
+    "email": "dan@docsbook.io",
+    "url": "https://docsbook.io"
+  },
+  "plugins": [
+    {
+      "name": "docs-sync",
+      "source": "./plugins/docs-sync",
+      "description": "Pre-push code↔docs drift detection. Fans out Haiku searchers per code cluster, Sonnet editors per drifted page, then a Sonnet curator merges everything atomically into your push.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Dan Bondarev",
+        "url": "https://github.com/Docsbook-io"
+      },
+      "keywords": ["docs", "drift", "pre-push", "subagents", "haiku", "sonnet", "markdown", "mcp"],
+      "license": "MIT"
+    }
+  ]
+}
