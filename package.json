@@ -1,7 +1,7 @@
 {
   "name": "docs-claude-plugins",
-  "version": "0.3.0",
-  "description": "Claude Code plugins for documentation workflows — subagents, MCP servers, and git hooks bundled into one command. Ships docs-sync (drift detection), docs-create (URL → live docs), and docs-insights (recurring analytics with schema-validated JSON reports).",
+  "version": "0.4.0",
+  "description": "Claude Code plugins for documentation workflows — subagents, MCP servers, and git hooks bundled into one command. Ships docs-sync (drift detection), docs-create (URL → enriched docs with competitor/learn/glossary pages → live), and docs-insights (recurring analytics with schema-validated JSON reports).",
   "keywords": [
     "documentation",
     "docs",

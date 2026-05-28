@@ -21,13 +21,13 @@
     {
       "name": "docs-create",
       "source": "./plugins/docs-create",
-      "description": "End-to-end docs bootstrap: crawl a product URL with Haiku, publish the result to GitHub, configure the Docsbook workspace via MCP — one /docs-create command, three pinned subagents, two MCP servers (markdown-lsp + docsbook).",
-      "version": "0.1.0",
+      "description": "End-to-end docs bootstrap: crawl a product URL with Haiku, enrich with marketing pages (competitor vs, learn/, glossary, use-cases, migration guides), publish the result to GitHub, configure the Docsbook workspace via MCP — one /docs-create command, four pinned subagents, two MCP servers (markdown-lsp + docsbook).",
+      "version": "0.2.0",
       "author": {
         "name": "Dan Bondarev",
         "url": "https://github.com/Docsbook-io"
       },
-      "keywords": ["docs", "crawl", "publish", "github", "docsbook", "subagents", "haiku", "sonnet", "markdown", "mcp"],
+      "keywords": ["docs", "crawl", "publish", "github", "docsbook", "subagents", "haiku", "sonnet", "markdown", "mcp", "enrichment", "competitor", "seo"],
       "license": "MIT"
     },
     {
