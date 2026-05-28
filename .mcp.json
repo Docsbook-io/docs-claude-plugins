@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "markdown-lsp": {
+      "command": "npx",
+      "args": ["-y", "markdown-lsp-mcp", "--docs", "./docs"]
+    }
+  }
+}
