@@ -1,0 +1,32 @@
+{
+  "name": "docs-claude-plugins",
+  "version": "0.2.0",
+  "description": "Claude Code plugins for documentation workflows — subagents, MCP servers, and git hooks bundled into one command.",
+  "keywords": [
+    "documentation",
+    "docs",
+    "claude",
+    "claude-code",
+    "plugins",
+    "subagents",
+    "mcp",
+    "drift-detection",
+    "pre-push",
+    "docsbook"
+  ],
+  "author": "Dan Bondarev",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Docsbook-io/docs-claude-plugins.git"
+  },
+  "homepage": "https://docsbook.io",
+  "files": [
+    "plugins/",
+    ".claude-plugin/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=16"
+  }
+}

@@ -1,8 +1,28 @@
+<div align="center">
+
 # docs-claude-plugins
 
-> **Claude Code plugins for documentation workflows — subagents, MCP servers, and git hooks bundled together.**
+**Claude Code plugins for documentation workflows — subagents, MCP servers, and git hooks bundled into one command.**
 
-A marketplace with two plugins. Both follow the same rule: **install the plugin, and the subagents, MCP servers, and (where applicable) the git hook are wired automatically.** No manual `.mcp.json` editing, no hand-rolled hook scripts.
+[![npm version](https://badge.fury.io/js/docs-claude-plugins.svg)](https://www.npmjs.com/package/docs-claude-plugins)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Claude Code only](https://img.shields.io/badge/Claude%20Code-only-orange.svg)](#)
+
+[docs-sync](#docs-sync--pre-push-drift-detection) • [docs-create](#docs-create--end-to-end-docs-bootstrap) • [How It Fits Together](#how-it-fits-together) • [Troubleshooting](#troubleshooting)
+
+</div>
+
+---
+
+## The Problem
+
+> You push code. Your docs drift. Nobody notices until a user opens a GitHub issue saying "this doesn't match the README."
+
+Setting up the fix is painful: wire up subagents by hand, edit `.mcp.json`, write a pre-push hook script, figure out which model to pin where. Most teams skip it.
+
+## The Solution
+
+Two plugins. One command each. Every piece — subagents, MCP servers, git hooks — wired automatically on install.
 
 | Plugin | What it does |
 |---|---|
@@ -11,7 +31,27 @@ A marketplace with two plugins. Both follow the same rule: **install the plugin,
 
 ---
 
-## What a plugin install gives you
+## How It Fits Together
+
+This package is the third layer of the Docsbook documentation ecosystem:
+
+```
+Skill (docs-skills)          = регламент    — знает КАК делать правильно
+Subagent (docs-subagents)    = исполнитель  — знает ЧТО делать и с кем
+Plugin (docs-claude-plugins) = сборка       — всё вместе, одна команда
+```
+
+**Which layer should you use?**
+
+- **Use the plugin** if you want "it just works" — one install command, everything wired.
+- **Use [docs-subagents](https://github.com/Docsbook-io/docs-subagents) directly** if you want control — pick only the agents you need, configure MCP yourself.
+- **Use [docs-skills](https://github.com/Docsbook-io/docs-skills) directly** if you want to teach your agent — SKILL.md files work in Cursor, Codex, Copilot, and any Claude-based tool.
+
+The three layers don't conflict. Running all three gives you agents (from the plugin), the same agent files again (from `docs-subagents`, harmlessly overwriting), and a separate set of SKILL.md guides (from `docs-skills`).
+
+---
+
+## What a Plugin Install Gives You
 
 `/plugin install <name>@docs-claude-plugins` is the single source of truth. One command sets up:
 
@@ -22,9 +62,9 @@ A marketplace with two plugins. Both follow the same rule: **install the plugin,
 | Slash command (`/docs-sync`, `/docs-create`, …) | Available in the session | ✅ Yes, on install |
 | Pre-push git hook (docs-sync only) | `.git/hooks/pre-push` | ⚠️ Offered on first `/docs-sync` run — accept once |
 
-Compared to installing the same pieces by hand:
+### Plugin vs. standalone installers
 
-| Action | This plugin | `npx docs-subagents install` | `npx docs-skills install` |
+| Action | This plugin | [`npx docs-subagents install`](https://github.com/Docsbook-io/docs-subagents) | [`npx docs-skills install`](https://github.com/Docsbook-io/docs-skills) |
 |---|---|---|---|
 | Copies subagents | ✅ | ✅ | ❌ |
 | Registers MCP automatically | ✅ | ❌ (edit `.mcp.json` yourself) | ❌ |
@@ -33,11 +73,9 @@ Compared to installing the same pieces by hand:
 | Ships SKILL.md knowledge base | ❌ | ❌ | ✅ |
 | Works in Cursor/Codex/Copilot | ❌ Claude Code only | ✅ | ✅ |
 
-The three installers do not conflict — running all three just gives you subagents (from the plugin), the same files again (from `docs-subagents`, harmlessly overwriting), and a separate set of SKILL.md guides (from `docs-skills`).
-
 ---
 
-## docs-sync — pre-push drift detection
+## docs-sync — Pre-Push Drift Detection
 
 Four subagents with pinned models (Haiku for cheap reads, Sonnet for edits), one MCP server for local doc-graph search, one pre-push hook that fires on every `git push`. Works on private repos. No CI, no cloud, no account.
 
@@ -76,14 +114,14 @@ claude --print --dangerously-skip-permissions /docs-sync
 /agents
 ```
 
-### What happens on `git push`
+### What Happens on `git push`
 
 1. Pre-push hook fires → calls `claude --print /docs-sync`.
-2. `docs-planner` (Haiku) clusters the diff into 1–5 thematic groups.
+2. [`docs-planner`](https://github.com/Docsbook-io/docs-subagents/blob/main/agents/docs-planner.md) (Haiku) clusters the diff into 1–5 thematic groups.
 3. Per cluster, in parallel:
-   - `docs-searcher` (Haiku) finds drifted docs pages via the `markdown-lsp` MCP.
-   - `docs-editor` (Sonnet) edits drifted `.md` files inside an isolated `git worktree`.
-4. `docs-curator` (Sonnet, fresh context) merges all worktree edits, resolves overlaps, drops speculative changes.
+   - [`docs-searcher`](https://github.com/Docsbook-io/docs-subagents/blob/main/agents/docs-searcher.md) (Haiku) finds drifted docs pages via the `markdown-lsp` MCP.
+   - [`docs-editor`](https://github.com/Docsbook-io/docs-subagents/blob/main/agents/docs-editor.md) (Sonnet) edits drifted `.md` files inside an isolated `git worktree`.
+4. [`docs-curator`](https://github.com/Docsbook-io/docs-subagents/blob/main/agents/docs-curator.md) (Sonnet, fresh context) merges all worktree edits, resolves overlaps, drops speculative changes.
 5. Final patch is applied via `git commit --amend` and pushed.
 
 Per-run cost: ~$0.05–0.15. Wall time: 10–20s for typical changes.
@@ -104,7 +142,7 @@ The model is pinned in each subagent's YAML frontmatter — invoking `docs-plann
 
 The same subagents are also published standalone at [docs-subagents](https://github.com/Docsbook-io/docs-subagents) for users who don't want the full plugin. See that repo's README for the by-hand setup path.
 
-### Hook environment variables
+### Hook Environment Variables
 
 | Variable | Effect |
 |---|---|
@@ -113,7 +151,7 @@ The same subagents are also published standalone at [docs-subagents](https://git
 
 Default mode is `warn` — the hook never blocks push.
 
-### Optional config
+### Optional Config
 
 Drop `.docs-sync.json` at the repo root:
 
@@ -136,7 +174,7 @@ Drop `.docs-sync.json` at the repo root:
 
 ---
 
-## docs-create — end-to-end docs bootstrap
+## docs-create — End-to-End Docs Bootstrap
 
 ```
 /plugin marketplace add Docsbook-io/docs-claude-plugins
@@ -145,7 +183,15 @@ Drop `.docs-sync.json` at the repo root:
 
 Same install model as `docs-sync` — subagents copied to `.claude/agents/`, two MCP servers registered automatically from `plugins/docs-create/.mcp.json`. No git hook for this plugin.
 
-### Slash commands
+### Quick Start
+
+```
+/docs-create https://example.com
+```
+
+One command. Three subagents. Live docs at `https://docsbook.io/<you>/<example>` in under a minute.
+
+### Slash Commands
 
 | Command | Purpose |
 |---|---|
@@ -162,7 +208,7 @@ Same install model as `docs-sync` — subagents copied to `.claude/agents/`, two
 | `docs-publisher` | Haiku | `git init` + `gh repo create` + push via HTTPS | Bash, Read |
 | `docs-workspace-configurator` | Sonnet | Branding / UI / AI / SEO via Docsbook MCP | Read + Docsbook MCP tools |
 
-### MCP servers
+### MCP Servers
 
 Both are registered automatically:
 
@@ -173,28 +219,20 @@ Both are registered automatically:
 
 The `docsbook` MCP needs OAuth on first use. Claude Code prompts for it the first time a subagent calls a `mcp__docsbook__*` tool.
 
-### Quick start
+### Knowledge Base
 
-```
-/docs-create https://example.com
-```
+The pinned subagents are the *executors*. The matching [docs-skills](https://github.com/Docsbook-io/docs-skills) entries are the *knowledge base* — tips, edge cases, output contracts, writing rules. Read the skill before tuning a subagent's behaviour:
 
-One command. Three subagents. Live docs at `https://docsbook.io/<you>/<example>` in under a minute (Docsbook indexing time depends).
-
-### Knowledge base
-
-The pinned subagents are the *executors*. The matching [docs-skills](https://github.com/Docsbook-io/docs-skills) entries are the *knowledge base* — tips, edge cases, output contracts, writing rules. Read the skill *before* tuning a subagent's behaviour:
-
-- [docs-from-site](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-from-site/SKILL.md)
-- [docs-publish](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-publish/SKILL.md)
-- [docs-setup-workspace](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-setup-workspace/SKILL.md)
-- [docs-create](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-create/SKILL.md)
+- [docs-from-site skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-from-site/SKILL.md)
+- [docs-publish skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-publish/SKILL.md)
+- [docs-setup-workspace skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-setup-workspace/SKILL.md)
+- [docs-create skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-create/SKILL.md)
 
 ---
 
-## How this differs from the standalone `docs-sync` skill in `docs-skills`
+## Plugin vs. docs-skills Skill
 
-This plugin **supersedes** the standalone `/docs-sync` skill in [docs-skills](https://github.com/Docsbook-io/docs-skills). Differences:
+This plugin **supersedes** the standalone [docs-sync skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/automation/docs-sync/SKILL.md) in [docs-skills](https://github.com/Docsbook-io/docs-skills). Differences:
 
 | | docs-skills skill | This plugin |
 |---|---|---|
@@ -210,15 +248,20 @@ If you use Cursor/Codex/Copilot, stick with the [docs-skills](https://github.com
 
 ## Troubleshooting
 
-**`/agents` does not list `docs-*`.** Confirm the plugin is enabled: `/plugin list`. If listed but agents missing, re-run `/plugin install docs-sync@docs-claude-plugins` — the install step copies the agent files.
+**`/agents` does not list `docs-*`.**
+Confirm the plugin is enabled: `/plugin list`. If listed but agents missing, re-run `/plugin install docs-sync@docs-claude-plugins` — the install step copies the agent files.
 
-**`docs-searcher` returns no results.** The `markdown-lsp` MCP probably did not start. Check `/mcp` — `markdown-lsp` should be `connected`. If it shows an error, run `npx -y markdown-lsp-mcp --docs ./docs` manually to see the failure.
+**`docs-searcher` returns no results.**
+The `markdown-lsp` MCP probably did not start. Check `/mcp` — `markdown-lsp` should be `connected`. If it shows an error, run `npx -y markdown-lsp-mcp --docs ./docs` manually to see the failure.
 
-**Pre-push hook never fires.** Confirm `.git/hooks/pre-push` exists and is executable. If not, run the installer one-liner above.
+**Pre-push hook never fires.**
+Confirm `.git/hooks/pre-push` exists and is executable. If not, run the installer one-liner above.
 
-**Hook fires but blocks the push.** You set `DOCS_SYNC_MODE=block` somewhere. Default is `warn` — never blocks.
+**Hook fires but blocks the push.**
+You set `DOCS_SYNC_MODE=block` somewhere. Default is `warn` — never blocks.
 
-**I want to skip the hook just once.** `DOCS_SYNC_SKIP=1 git push`.
+**I want to skip the hook just once.**
+`DOCS_SYNC_SKIP=1 git push`
 
 ---
 
