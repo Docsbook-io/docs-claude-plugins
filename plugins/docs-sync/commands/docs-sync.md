@@ -1,13 +1,44 @@
 ---
 description: Detect and fix code↔docs drift in parallel git worktrees before push
 allowed-tools: Bash, Read, Write, Edit, Grep, Glob, Agent
+argument-hint: [optional free-text intent, e.g. "remove all mentions of the legacy export feature"]
 ---
 
 # /docs-sync — code↔docs drift orchestrator
 
-Run as a pre-push workflow. Detect markdown documentation that no longer matches the current code on the branch, fix it in parallel git worktrees, and atomically amend the push.
+Two ways to run this command:
 
-This command orchestrates four subagents shipped with this plugin: `docs-planner` (Haiku), `docs-searcher` (Haiku), `docs-editor` (Sonnet), `docs-curator` (Sonnet). The `markdown-lsp` MCP server (bundled) provides the doc-graph search tools.
+- **Diff mode (default, no arguments).** A pre-push workflow. Detect markdown that no longer matches the current code on the branch, fix it in parallel git worktrees, and atomically amend the push. Triggered by `git push` via the bundled PreToolUse hook.
+- **Intent mode (`$ARGUMENTS` is non-empty).** A user-driven workflow. The user describes in plain text what should change in the docs — e.g. *"remove all mentions of the legacy export feature"*, *"sync the auth section to describe the new SSO flow"*, *"drop the comparison with feature X from every alternatives page"*. The same four-subagent pipeline runs, but inputs are derived from the intent string instead of a git diff. No commit is amended, no push gate is touched.
+
+In **both** modes, this command orchestrates the same four subagents shipped with this plugin: `docs-planner` (Haiku), `docs-searcher` (Haiku), `docs-editor` (Sonnet), `docs-curator` (Sonnet). The `markdown-lsp` MCP server (bundled) provides the doc-graph search tools.
+
+**You MUST run the pipeline through these subagents in both modes.** Do not silently fall back to doing the work yourself just because there is no diff — the whole point of the command is that the four agents handle planning, search, editing and curation in parallel. If you ever find yourself reading and editing docs directly without spawning `docs-planner` / `docs-searcher` / `docs-editor` / `docs-curator`, stop and re-enter the pipeline.
+
+## Mode selection
+
+```text
+INTENT = "$ARGUMENTS"           # raw text passed after /docs-sync
+if INTENT is empty or whitespace-only:
+    MODE = "diff"
+else:
+    MODE = "intent"
+```
+
+- `MODE=diff` → run Steps 0a, 0b, 1, 2, 3, 4, 5, 6, 7, 8, 9 as written.
+- `MODE=intent` → run Steps 0a, 2, 3, 4, 5, 6, 7, 8, 9. **Skip Step 0b** (no push gate to clear) and **skip Step 1** (no diff to compute). Where steps below say "the diff" or "cluster diff", substitute the intent text — see the per-step **Intent mode** boxes.
+
+Set the carrier variables for downstream steps:
+
+```bash
+if [ -n "$INTENT" ]; then
+  MODE="intent"
+  DIFF_CONTEXT="USER INTENT: $INTENT"     # passed wherever the diff would normally go
+  DIFF_FILES=""                            # no changed code files
+else
+  MODE="diff"
+fi
+```
 
 ---
 
@@ -29,7 +60,9 @@ git worktree prune
 
 This step is unconditional and silent on success. Never ask the user about it — leftover worktrees are always garbage.
 
-## Step 0b — Mark this session as docs-synced
+> **Intent mode skips Step 0b.** The push-gate marker is only relevant when docs-sync runs because of a git push. When the user explicitly invokes `/docs-sync <intent>`, do not touch the marker file.
+
+## Step 0b — Mark this session as docs-synced  *(diff mode only)*
 
 This plugin ships a `PreToolUse` hook (`hooks/pre-tool-git-push-docs-sync.sh`)
 that blocks any `git push` issued by Claude until docs-sync has run in the
@@ -57,7 +90,9 @@ To disable the guard entirely in this environment, set `DOCS_SYNC_SKIP=1`.
 > session — the PreToolUse hook is the in-session equivalent and keeps docs-sync
 > running in the same context as the change.
 
-## Step 1 — Detect changed code files and docs layout
+## Step 1 — Detect changed code files and docs layout  *(diff mode only)*
+
+> **Intent mode skips Step 1 entirely.** There is no diff to compute. Still detect the docs submodule layout — copy the `DOCS_IS_SUBMODULE` / `SUBMODULE_REMOTE` / `SUBMODULE_BRANCH` detection block below and run it, because Step 4 and Step 7 still need it. Just do not run the `git diff` block.
 
 ```bash
 BASE=$(git merge-base HEAD origin/main 2>/dev/null || git merge-base HEAD origin/master 2>/dev/null || echo "")
@@ -97,13 +132,24 @@ Use the docs-searcher subagent for one trivial query like doc_workspace_outline 
 
 ## Step 3 — Plan clusters (Haiku via docs-planner)
 
-Invoke the `docs-planner` subagent. Pass it:
+Invoke the `docs-planner` subagent.
+
+**Diff mode — pass it:**
+- A line `MODE: diff`
 - The output of `git diff "$BASE"..HEAD` (full diff, capped at 50KB — truncate if larger)
 - The output of `find src -maxdepth 2 -type d` for tree context
 
-Expected return: strict JSON `{"clusters":[{"name":"...","files":[...],"hypothesis":"..."}]}`.
+**Intent mode — pass it:**
+- A line `MODE: intent`
+- A line `INTENT: <the raw $ARGUMENTS string>`
+- The output of `find docs -maxdepth 3 -type d` for docs tree context (planner clusters by docs area, not src area, in intent mode)
+- Optionally the output of `find src -maxdepth 2 -type d` if the intent references code concepts
 
-If the agent fails or returns empty clusters, fall back to top-level dirs of the changed files (group by first path segment).
+Expected return in both modes: strict JSON `{"clusters":[{"name":"...","files":[...],"hypothesis":"..."}]}`. In intent mode `files` may be empty (planner did not see code changes) — that's fine; the searcher will discover candidate doc paths from MCP anyway.
+
+If the agent fails or returns empty clusters:
+- Diff mode → fall back to top-level dirs of the changed files (group by first path segment).
+- Intent mode → fall back to a single cluster `{"name":"intent","files":[],"hypothesis":"$INTENT"}` so the pipeline still runs end-to-end.
 
 ## Step 4 — Fan out per cluster (parallel)
 
@@ -124,13 +170,23 @@ For each cluster, in parallel:
 
    When `DOCS_IS_SUBMODULE=1`, pass the editor the worktree path **without** a `docs/` prefix — inside that worktree, `ai/source-of-truth.md` is at root, not under `docs/`.
 
-2. Invoke `docs-searcher` (Haiku) with the cluster name, files, and cluster diff. Expected return: `{"drifted_pages":[{"path":"...","why":"...","confidence":0.0-1.0}],"confidence":0.0-1.0}`.
+2. Invoke `docs-searcher` (Haiku) with the cluster name, files, and **the cluster payload**:
+   - Diff mode → the cluster's slice of the unified diff.
+   - Intent mode → a block `MODE: intent\nINTENT: <text>` plus the cluster's `hypothesis` line.
 
-3. If `confidence >= 0.6` and `drifted_pages` is non-empty, invoke `docs-editor` (Sonnet) inside the worktree with the drifted_pages list and cluster diff. Editor edits the .md files in-place inside the worktree and returns a summary.
+   Expected return in both modes: `{"drifted_pages":[{"path":"...","why":"...","confidence":0.0-1.0}],"confidence":0.0-1.0}`.
+
+3. If `confidence >= 0.6` and `drifted_pages` is non-empty, invoke `docs-editor` (Sonnet) inside the worktree with the drifted_pages list and the cluster payload:
+   - Diff mode → the cluster diff (current behaviour).
+   - Intent mode → `MODE: intent\nINTENT: <text>` plus the cluster `hypothesis`. The editor treats the intent as the change spec — it must justify every edit by the intent, not invent unrelated improvements.
+
+   Editor edits the .md files in-place inside the worktree and returns a summary.
 
 4. Capture the edits (paths + diffs) for the curator step.
 
 Run all clusters concurrently — issue multiple Agent calls in one message.
+
+> **Intent mode reminder.** Even when the intent is short ("remove every mention of feature X"), still spawn one `docs-searcher` and one `docs-editor` per cluster. Do not bypass the subagents and edit files yourself "because it's just a find-and-replace". The subagents enforce the 40% diff cap, MCP-grounded search, and the docs-skills checklist — losing those is the whole regression the user wants fixed.
 
 ## Step 5 — Wait for all subagents
 
@@ -139,8 +195,8 @@ Block until every cluster has finished. Collect all editor outputs.
 ## Step 6 — Curate (Sonnet, fresh context via docs-curator)
 
 Invoke the `docs-curator` subagent with:
-- The original full diff
-- A structured list of every editor's hunks (path + before + after)
+- **The grounding source.** In diff mode: the original full diff. In intent mode: a block `MODE: intent\nINTENT: <text>`. The curator uses this to decide which edits are "grounded" (justified by the source) vs "speculative" (out of scope).
+- A structured list of every editor's hunks (path + before + after).
 
 Curator resolves overlaps, normalizes style, drops speculative edits. Returns:
 
@@ -166,8 +222,17 @@ if git diff --cached --quiet; then
   echo "[docs-sync] no doc edits needed"
   STATUS="no_op"
 else
-  git commit --amend --no-edit
-  echo "[docs-sync] amended HEAD with $(git diff --cached --name-only | wc -l) doc files"
+  if [ "$MODE" = "intent" ]; then
+    # Intent mode: stand-alone commit, no amend (the user did not author a parent commit for this run)
+    git commit -m "docs: $(echo "$INTENT" | head -c 72)
+
+    Generated by /docs-sync intent mode.
+    Intent: $INTENT"
+  else
+    # Diff mode: amend the user's HEAD so the docs commit ships with the code commit
+    git commit --amend --no-edit
+  fi
+  echo "[docs-sync] committed $(git diff HEAD~..HEAD --name-only | wc -l) doc files"
   STATUS="success"
   MAIN_COMMIT=$(git rev-parse HEAD)
 fi
@@ -188,9 +253,16 @@ if git diff --cached --quiet; then
   echo "[docs-sync] no doc edits needed"
   STATUS="no_op"
 else
-  git commit -m "docs: sync to code changes in $(git -C ../../.. rev-parse --short HEAD)
+  if [ "$MODE" = "intent" ]; then
+    git commit -m "docs: $(echo "$INTENT" | head -c 72)
 
-  Generated by /docs-sync. See main repo commit for code diff."
+    Generated by /docs-sync intent mode.
+    Intent: $INTENT"
+  else
+    git commit -m "docs: sync to code changes in $(git -C ../../.. rev-parse --short HEAD)
+
+    Generated by /docs-sync. See main repo commit for code diff."
+  fi
   SUBMODULE_COMMIT=$(git rev-parse HEAD)
   echo "[docs-sync] committed $(git diff HEAD~..HEAD --name-only | wc -l) files in submodule: $SUBMODULE_COMMIT"
   STATUS="commit_local"   # not pushed yet
@@ -255,6 +327,8 @@ Print a single JSON object to stdout — nothing else after this. The format is 
 ```json
 {
   "status": "success | no_op | partial | awaiting_push_consent | blocked",
+  "mode": "diff | intent",
+  "intent": "<the $ARGUMENTS string, or empty string in diff mode>",
   "run_id": "<RUN_ID>",
   "docs_is_submodule": true,
   "drift_detected": true,
