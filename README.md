@@ -1,8 +1,19 @@
 # docs-claude-plugins
 
-> **Solve docs drift — one Claude Code plugin install away.**
+> **Two Claude Code plugins for documentation workflows.**
 
-A Claude Code plugin that bundles everything needed for a pre-push `code↔docs` drift workflow:
+A marketplace with two plugins:
+
+| Plugin | What it does |
+|---|---|
+| **`docs-sync`** | Pre-push `code↔docs` drift detection: planner → searcher → editor → curator. |
+| **`docs-create`** | End-to-end docs bootstrap from a URL: crawl → publish to GitHub → configure Docsbook workspace. |
+
+Both share the same principles: real Claude Code subagents with pinned models, MCP servers registered automatically via `.mcp.json`, no CI, no cloud, no account beyond GitHub + Docsbook.
+
+---
+
+## docs-sync — pre-push drift detection
 
 - **`/docs-sync`** slash command — the orchestrator
 - **4 subagents with pinned models** — Haiku for planner & searcher, Sonnet for editor & curator
@@ -110,6 +121,59 @@ Drop an optional config file named `.docs-sync.json` at the repo root:
 | `threshold` | `0.6` | Confidence floor for `docs-editor` to act |
 | `diffCap` | `0.4` | Max share of a page editor may rewrite per pass |
 | `worktreeDir` | `.claude/worktrees` | Where parallel worktrees live (kept on error for triage) |
+
+---
+
+## docs-create — end-to-end docs bootstrap
+
+```bash
+/plugin marketplace add Docsbook-io/docs-claude-plugins
+/plugin install docs-create@docs-claude-plugins
+```
+
+The `docs-create` plugin ships:
+
+- **`/docs-create`** — full pipeline: crawl URL → publish GitHub → configure Docsbook workspace
+- **`/docs-from-site`** — crawl only (stage 1)
+- **`/docs-publish`** — publish a local folder (stage 2)
+- **`/docs-setup-workspace`** — configure Docsbook via MCP (stage 3)
+
+### Subagents (with pinned models)
+
+| Subagent | Model | Job | Tools |
+|---|---|---|---|
+| `docs-site-crawler` | Haiku | Crawl product URL → Markdown + `_branding.json` | Read, Write, Bash, WebFetch |
+| `docs-publisher` | Haiku | `git init` + `gh repo create` + push via HTTPS | Bash, Read |
+| `docs-workspace-configurator` | Sonnet | Branding/UI/AI/SEO via Docsbook MCP | Read + Docsbook MCP tools |
+
+### MCP servers (bundled)
+
+Both registered automatically via `plugins/docs-create/.mcp.json`:
+
+| MCP | Transport | Purpose |
+|---|---|---|
+| `markdown-lsp` | stdio (`npx markdown-lsp-mcp`) | Local doc-graph search (same one as `docs-sync`) |
+| `docsbook` | HTTP (`https://docsbook.io/api/mcp/server`) | Workspace configuration: branding, UI, AI, SEO, languages |
+
+The `docsbook` MCP needs OAuth on first use — Claude Code will prompt for it the first time a subagent calls a `mcp__docsbook__*` tool.
+
+### Quick start
+
+```bash
+# After /plugin install docs-create@docs-claude-plugins
+/docs-create https://example.com
+```
+
+One command. Three subagents. Live docs at `https://docsbook.io/<you>/<example>` in under a minute (Docsbook indexing time depends).
+
+### Knowledge base
+
+The pinned subagents are the *executors*. The corresponding [docs-skills](https://github.com/Docsbook-io/docs-skills) entries are the *knowledge base* — tips, edge cases, output contracts, writing rules. Read the skill *before* tuning a subagent's behaviour:
+
+- [docs-from-site](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-from-site/SKILL.md)
+- [docs-publish](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-publish/SKILL.md)
+- [docs-setup-workspace](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-setup-workspace/SKILL.md)
+- [docs-create](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-create/SKILL.md)
 
 ---
 
