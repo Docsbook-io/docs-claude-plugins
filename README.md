@@ -186,25 +186,30 @@ Same install model as `docs-sync` — subagents copied to `.claude/agents/`, two
 ### Quick Start
 
 ```
-/docs-create https://example.com
+/docs-create https://example.com                       # marketing site
+/docs-create https://github.com/owner/repo             # code repo or docs platform — auto-detected
 ```
 
-One command. Three subagents. Live docs at `https://docsbook.io/<you>/<example>` in under a minute.
+One command. Auto-routes between three builder subagents depending on what your source is. Live docs at `https://docsbook.io/<you>/<example>` in under a minute.
 
 ### Slash Commands
 
 | Command | Purpose |
 |---|---|
-| `/docs-create` | Full pipeline: crawl URL → publish GitHub → configure Docsbook workspace |
-| `/docs-from-site` | Crawl only (stage 1) |
-| `/docs-publish` | Publish a local folder (stage 2) |
-| `/docs-setup-workspace` | Configure Docsbook via MCP (stage 3) |
+| `/docs-create` | Full pipeline: detect source → crawl/extract/import → publish GitHub → configure Docsbook workspace |
+| `/docs-from-site` | Crawl a marketing website only |
+| `/docs-from-code` | Extract a code repo (README + API + config) only |
+| `/docs-from-docs` | Import from Mintlify / GitBook / Docusaurus / Nextra / VitePress / Starlight only |
+| `/docs-publish` | Publish a local folder (push to GitHub) |
+| `/docs-setup-workspace` | Configure Docsbook via MCP |
 
 ### Subagents
 
 | Subagent | Model | Job | Tools |
 |---|---|---|---|
 | `docs-site-crawler` | Haiku | Crawl product URL → Markdown + `_branding.json` | Read, Write, Bash, WebFetch |
+| `docs-code-crawler` | Haiku | Clone code repo → split README + enumerate public API + extract config | Read, Write, Bash, WebFetch |
+| `docs-platform-importer` | Haiku | Identify docs platform → copy pages + normalise MDX components → relative-link rewrite | Read, Write, Bash, WebFetch |
 | `docs-publisher` | Haiku | `git init` + `gh repo create` + push via HTTPS | Bash, Read |
 | `docs-workspace-configurator` | Sonnet | Branding / UI / AI / SEO via Docsbook MCP | Read + Docsbook MCP tools |
 
@@ -224,6 +229,8 @@ The `docsbook` MCP needs OAuth on first use. Claude Code prompts for it the firs
 The pinned subagents are the *executors*. The matching [docs-skills](https://github.com/Docsbook-io/docs-skills) entries are the *knowledge base* — tips, edge cases, output contracts, writing rules. Read the skill before tuning a subagent's behaviour:
 
 - [docs-from-site skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-from-site/SKILL.md)
+- [docs-from-code skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-from-code/SKILL.md)
+- [docs-from-docs skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-from-docs/SKILL.md)
 - [docs-publish skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-publish/SKILL.md)
 - [docs-setup-workspace skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-setup-workspace/SKILL.md)
 - [docs-create skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-create/SKILL.md)
