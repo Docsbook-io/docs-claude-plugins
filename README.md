@@ -36,9 +36,9 @@ Two plugins. One command each. Every piece — subagents, MCP servers, git hooks
 This package is the third layer of the Docsbook documentation ecosystem:
 
 ```
-Skill (docs-skills)          = регламент    — знает КАК делать правильно
-Subagent (docs-subagents)    = исполнитель  — знает ЧТО делать и с кем
-Plugin (docs-claude-plugins) = сборка       — всё вместе, одна команда
+Skill (docs-skills)          = regulation   — knows HOW to do it right
+Subagent (docs-subagents)    = executor     — knows WHAT to do and with whom
+Plugin (docs-claude-plugins) = bundle       — everything together, one command
 ```
 
 **Which layer should you use?**
