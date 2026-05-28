@@ -1,6 +1,6 @@
 {
   "name": "docs-sync",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Pre-push code↔docs drift detection. Fans out Haiku searchers per code cluster, Sonnet editors per drifted page, then a Sonnet curator merges everything atomically into your push.",
   "author": {
     "name": "Dan Bondarev",
