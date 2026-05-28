@@ -26,23 +26,30 @@ Works on private repos. No CI, no cloud, no account. Falls back gracefully when 
 
 ## Install
 
-```bash
-# Add this repo as a marketplace
+Two steps. No choices, no config files, no questions.
+
+**Step 1 — inside Claude Code, run these two slash commands:**
+
+```
 /plugin marketplace add Docsbook-io/docs-claude-plugins
-
-# Install the plugin
 /plugin install docs-sync@docs-claude-plugins
-
-# Then install the git hook (one time, inside your repo)
-bash <(curl -fsSL https://raw.githubusercontent.com/Docsbook-io/docs-claude-plugins/main/scripts/install-git-hook.sh)
 ```
 
-That's it. Every `git push` now syncs your docs.
+That registers the marketplace and enables the plugin for the current project. The subagents (`docs-planner`, `docs-searcher`, `docs-editor`, `docs-curator`) and the `markdown-lsp` MCP server become available immediately — no restart needed.
+
+**Step 2 — type `/docs-sync` in Claude Code.**
+
+The first time you run it, Claude will offer to install the pre-push git hook for you. Accept it. From that moment on, every `git push` automatically syncs your docs — you don't need to type `/docs-sync` again.
+
+> If you prefer to install the hook manually instead of letting `/docs-sync` do it, run:
+> ```bash
+> bash <(curl -fsSL https://raw.githubusercontent.com/Docsbook-io/docs-claude-plugins/main/scripts/install-git-hook.sh)
+> ```
 
 ### Verify it works
 
 ```bash
-# Run the workflow once without pushing:
+# Run the workflow once without pushing anything:
 claude --print --dangerously-skip-permissions /docs-sync
 
 # List the subagents (should include 4 docs-* ones):

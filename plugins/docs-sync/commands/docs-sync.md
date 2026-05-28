@@ -11,6 +11,33 @@ This command orchestrates four subagents shipped with this plugin: `docs-planner
 
 ---
 
+## Step 0 — Offer to install the pre-push hook (first run only)
+
+Before any docs work, check whether the pre-push git hook is already installed in this repo:
+
+```bash
+HOOK=".git/hooks/pre-push"
+if [ -f "$HOOK" ] && grep -q "docs-sync" "$HOOK" 2>/dev/null; then
+  HOOK_INSTALLED=1
+else
+  HOOK_INSTALLED=0
+fi
+```
+
+If `HOOK_INSTALLED=0`, tell the user in one sentence:
+
+> "I can install a pre-push git hook so `/docs-sync` runs automatically on every `git push`. Install it now?"
+
+If they say yes (or `--yes` was passed to the command), run:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/Docsbook-io/docs-claude-plugins/main/scripts/install-git-hook.sh)
+```
+
+If they say no, continue — `/docs-sync` still works as a manual command.
+
+Do **not** ask again on subsequent runs (the grep on `$HOOK` is the gate). Never block the workflow on this — if the hook installer fails, log it and continue with the drift detection.
+
 ## Step 1 — Detect changed code files
 
 ```bash
