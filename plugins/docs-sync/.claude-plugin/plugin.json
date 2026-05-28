@@ -1,7 +1,7 @@
 {
   "name": "docs-sync",
-  "version": "0.1.1",
-  "description": "Pre-push code↔docs drift detection. Fans out Haiku searchers per code cluster, Sonnet editors per drifted page, then a Sonnet curator merges everything atomically into your push.",
+  "version": "0.2.0",
+  "description": "Pre-push code↔docs drift detection. In-session PreToolUse hook intercepts git push, fans out Haiku searchers per code cluster, Sonnet editors per drifted page, then a Sonnet curator merges everything atomically into your push.",
   "author": {
     "name": "Dan Bondarev",
     "email": "dan@docsbook.io",

@@ -29,32 +29,33 @@ git worktree prune
 
 This step is unconditional and silent on success. Never ask the user about it — leftover worktrees are always garbage.
 
-## Step 0b — Offer to install the pre-push hook (first run only)
+## Step 0b — Mark this session as docs-synced
 
-Before any docs work, check whether the pre-push git hook is already installed in this repo:
-
-```bash
-HOOK=".git/hooks/pre-push"
-if [ -f "$HOOK" ] && grep -q "docs-sync" "$HOOK" 2>/dev/null; then
-  HOOK_INSTALLED=1
-else
-  HOOK_INSTALLED=0
-fi
-```
-
-If `HOOK_INSTALLED=0`, tell the user in one sentence:
-
-> "I can install a pre-push git hook so `/docs-sync` runs automatically on every `git push`. Install it now?"
-
-If they say yes (or `--yes` was passed to the command), run:
+This plugin ships a `PreToolUse` hook (`hooks/pre-tool-git-push-docs-sync.sh`)
+that blocks any `git push` issued by Claude until docs-sync has run in the
+current session. Once you've finished the workflow below successfully, drop a
+marker file so the next push in this session is not blocked again:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/Docsbook-io/docs-claude-plugins/main/scripts/install-git-hook.sh)
+touch "/tmp/.docs-sync-done-${CLAUDE_SESSION_ID:-$(date +%s)}"
 ```
 
-If they say no, continue — `/docs-sync` still works as a manual command.
+The marker is consumed (deleted) on first use, so each new code change still
+triggers a fresh docs-sync before push. If the user wants to skip the guard for
+a single push without running this command, they can prefix:
 
-Do **not** ask again on subsequent runs (the grep on `$HOOK` is the gate). Never block the workflow on this — if the hook installer fails, log it and continue with the drift detection.
+```bash
+DOCS_SYNC_DONE=1 git push origin main
+```
+
+To disable the guard entirely in this environment, set `DOCS_SYNC_SKIP=1`.
+
+> **Note.** The legacy `scripts/install-git-hook.sh` (real `.git/hooks/pre-push`)
+> is still shipped for users who push from a plain terminal outside Claude Code.
+> It runs `claude --print /docs-sync` in a separate headless session and is **not**
+> recommended when you're already working inside an interactive Claude Code
+> session — the PreToolUse hook is the in-session equivalent and keeps docs-sync
+> running in the same context as the change.
 
 ## Step 1 — Detect changed code files and docs layout
 
