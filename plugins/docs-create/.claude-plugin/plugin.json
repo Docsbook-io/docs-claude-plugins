@@ -1,6 +1,6 @@
 {
   "name": "docs-create",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "End-to-end docs bootstrap: crawl a product URL with Haiku — or, when no source exists, research competitors and generate docs from a topic with Sonnet. Enrich with marketing pages, publish to GitHub, configure the Docsbook workspace via MCP. Reads and writes Claude memory across runs so future sessions reuse project context.",
   "author": {
     "name": "Dan Bondarev",

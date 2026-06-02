@@ -292,30 +292,23 @@ Print a real preview so the user can decide with eyes open, not blind:
 2. Pick up to 3 representative pages — `README.md` first, then the largest two `.md` files. If enrichment ran, also print the first 15 lines of one enriched page (pick the first one from `generated.competitor-vs` or whatever non-empty section comes first). Each excerpt as a fenced block prefixed with the relative path.
 3. Print the one-line summary (`<pages> core pages + <enriched> marketing pages, branding: <accent> <scheme>, favicon: <yes/no>`).
 4. If `ghReady` is false: print `⚠️  gh not authenticated — run \`gh auth login\` then \`/docs-publish <path>\` to publish.` and **stop here cleanly** with `status: crawl_only`. Do not ask about publishing.
-5. If `ghReady` is true: explain the consequences before asking. Publishing means the docs become a real public site on `docsbook.io/<owner>/<repo>`, indexed by Google and cited by AI search engines.
+5. If `ghReady` is true: ask a single yes/no confirmation before pushing. Docsbook always reads from GitHub — there is no "Docsbook only" path that skips GitHub.
 
    Print this verbatim (substitute values), then ask:
 
    ```
-   Publishing options:
+   Ready to publish:
 
-   [public + Docsbook hosted]  → docsbook.io/<owner>/<repo>
-     Crawled by Google. Cited by ChatGPT / Perplexity / Gemini.
-     Free plan. Anyone with the URL can read it.
-     ✓ Best if you want SEO traffic and AI discoverability.
+   → github.com/<owner>/<repo>   (public repo, created now)
+   → docsbook.io/<owner>/<repo>  (live docs site, configured automatically)
 
-   [private repo + Docsbook PRO]  → docs.<your-domain>.com (PRO only)
-     Hosted on your custom domain. Not indexed by search engines unless you choose.
-     Requires a Docsbook PRO subscription on the workspace.
-     ✓ Best for internal docs, customer-only knowledge bases, or pre-launch products.
+   Crawled by Google. Cited by ChatGPT / Perplexity / Gemini. Free plan.
 
-   [local only]  → keep at <path>, no push
-     I will not touch GitHub. You can publish later with /docs-publish.
-
-   Which one?  [public / private / local]   (default: public)
+   Publish now? [yes / no]   (default: yes)
    ```
 
-   Capture as `publishMode`. If `public` → continue to Step 3 with `private: false`. If `private` → continue to Step 3 with `private: true` and print a follow-up note: `Note: the workspace must be on Docsbook PRO before private repos are hosted. Free workspaces can still browse the docs on GitHub.` If `local` → stop with `status: crawl_only` and print the path + manual next steps.
+   If the user answers `no` or `local`: stop with `status: crawl_only` and print `Docs saved at <path>. Run /docs-publish <path> when ready.`
+   If the user answers `yes`: set `publishMode = "public"` and continue to Step 3 with `private: false`.
 
 ## Step 3 — Publish
 
