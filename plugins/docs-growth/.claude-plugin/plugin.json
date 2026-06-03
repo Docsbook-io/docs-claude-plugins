@@ -1,6 +1,6 @@
 {
   "name": "docs-growth",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Growth-reasoning pipeline over a product source-of-truth. Three pinned subagents (segment-analyst, funnel-analyst, competitor-analyst) reason about who buys, how they enter, and who competes — grounded in real analytics via docs-insights where data exists, simulated only where it cannot — and append what they learn back into the private knowledge base (about/, product-marketing context, etc.). Proposes and enriches; never touches product code or client docs. Emits schema-validated JSON consumable by downstream opportunity-mapping or experiment-planning agents.",
   "author": {
     "name": "Dan Bondarev",
