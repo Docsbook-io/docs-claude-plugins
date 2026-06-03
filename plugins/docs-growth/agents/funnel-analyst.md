@@ -14,10 +14,21 @@ SOT_DIR: <path to the product source-of-truth>
 FUNNEL_FILE: <path to the funnel/GTM file within SOT_DIR>
 DOCS_DIR: <path to the product's own docs, if any>
 INSIGHTS_DIR: <path to .docsbook/insights, if it exists>
+DISTRO_DIR: <path to .distro/_media collected distribution signals, or "none">
 WORKSPACE: <id or owner/repo, or "none">
 PERIOD: <analytics window, e.g. 30d>
 FUNNEL_FOCUS: <a channel to weight extra, e.g. "mcp", or "none">
 ```
+
+### Distribution signals (`DISTRO_DIR`)
+
+If `DISTRO_DIR` is set, it points at LLM-enriched distribution signals (`.distro/_media/<source>.csv`). **Your slice is `analyst_for=funnel`** — signals the enricher flagged as being about an entry-path / acquisition channel / funnel mechanics:
+
+```bash
+node ~/Documents/startupin24h/distributor-agents/read-distro-signals.js --analyst funnel --enriched-only --json
+```
+
+This slice is intentionally small (most signals are segment/competitor). Treat each as a qualitative, citable note about how a channel actually works in the wild (e.g. a breakdown of how a rival wins a channel) — useful colour for the matching entry-path's "friction" and "biggest gap", `evidence_basis: "measured"` with the `url`. The on-site funnel/UTM reports remain your primary quantitative evidence; these signals supplement, never replace, completion-rate data.
 
 ## What you produce
 

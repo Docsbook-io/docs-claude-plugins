@@ -16,6 +16,7 @@ Parse arguments:
 
 - `--sot-dir <path>` **(required)** — the private knowledge base to read and enrich (`about/`, `.agents/product-marketing.md`, `docs-internal/`, …).
 - `--workspace <id|owner/repo>` *(optional)* — Docsbook workspace for real analytics. Omit → simulation-only mode (still runs).
+- `--distro-dir <path>` *(optional)* — folder of collected, LLM-enriched distribution signals (`.distro/_media/`) the lenses ground in. Omit → lenses run without external signal. Verify it exists; if it doesn't, treat as `none`.
 - `--lenses <list>` *(default `segment,funnel,competitor`)* — which lenses to run.
 - `--period <30d|14d|7d>` *(default `30d`)* — analytics window for the funnel lens.
 - `--funnel-focus <channel>` *(optional)* — a channel to stress-test harder (e.g. `mcp`).
@@ -38,7 +39,7 @@ Invoke the pinned subagents in a single message so they run concurrently — the
 | funnel | `funnel-analyst` |
 | competitor | `competitor-analyst` |
 
-Pass each its input contract (see the agent files). Give every lens the verbatim `FUNNEL_CONSTRAINT` and the path to `.docsbook/insights/` so it can reuse existing analytics reports. Only run the lenses named in `--lenses`.
+Pass each its input contract (see the agent files). Give every lens the verbatim `FUNNEL_CONSTRAINT` and the path to `.docsbook/insights/` so it can reuse existing analytics reports. **Also pass `DISTRO_DIR` (the resolved `--distro-dir`, or `none`) to every lens** — each reads its own slice via `read-distro-signals.js` (segment → `analyst_for=segment`, competitor → `analyst_for=competitor`, funnel → `analyst_for=funnel`). Only run the lenses named in `--lenses`.
 
 **Real data first:** if a lens needs a funnel/UTM/cohort slice that isn't already in `.docsbook/insights/latest/`, and `--workspace` is set, run the matching docs-insights skill (`/docs-funnel`, `/docs-utm`, `/docs-cohort`) first, then hand its report path to the lens. Never have lenses call analytics MCP tools directly — keep one analytics path.
 

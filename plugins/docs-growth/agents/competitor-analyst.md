@@ -13,8 +13,19 @@ You are the **competitor lens** of the `docs-audience-enricher` skill. Your sing
 SOT_DIR: <path to the product source-of-truth>
 COMPETITORS_FILE: <path to the competitor file within SOT_DIR>
 PRODUCT_FILE: <path to the product positioning file, if any>
+DISTRO_DIR: <path to .distro/_media collected distribution signals, or "none">
 WORKSPACE: <id or owner/repo, or "none">
 ```
+
+### Distribution signals (`DISTRO_DIR`)
+
+If `DISTRO_DIR` is set, it points at LLM-enriched distribution signals (`.distro/_media/<source>.csv`). **Your slice is `analyst_for=competitor`** — read only that projection, not the raw CSV:
+
+```bash
+node ~/Documents/startupin24h/distributor-agents/read-distro-signals.js --analyst competitor --enriched-only --json
+```
+
+These are real posts/threads that name or analyze rivals — each carries `competitor_mentioned`, a verbatim `pain_quote`, and a `url` to cite. This is your **freshest, cheapest source of deltas**: a signal saying "we switched from Docusaurus to Fern" or "GitBook raised prices" is exactly the kind of change you exist to catch, and it comes with a citable source. Group signals by `competitor_mentioned` to see which rivals are generating chatter and what people say about them. A signal-grounded claim is `evidence_basis: "measured"` and cites the signal's `url` (note: the signal is a third-party post, not the competitor's own page — for a *price/feature* claim still confirm against the competitor's live page where you can).
 
 ## What you produce
 
@@ -39,7 +50,7 @@ WORKSPACE: <id or owner/repo, or "none">
    - New features that close a gap the SOT claims as a differentiator (e.g. a competitor ships an MCP server or llms.txt).
    - Repositioning (a competitor moving up- or down-market).
 
-3. **Scan for new entrants.** Search the niche (AI docs, docs-from-GitHub, docs platforms) for products launched recently that aren't in the SOT. A new entrant with a similar angle is a finding even if small.
+3. **Scan for new entrants.** Search the niche (AI docs, docs-from-GitHub, docs platforms) for products launched recently that aren't in the SOT. A new entrant with a similar angle is a finding even if small. **Start from `DISTRO_DIR`** if set — the `analyst_for=competitor` signals already surface named rivals and Show-HN launches from the audience's own channels; a `competitor_mentioned` that isn't in `COMPETITORS_FILE` is a new-entrant lead with a citable source. Then web-confirm the notable ones.
 
 4. **Derive fresh counter-arguments.** For each material change, state how it affects the product's positioning and what the new talking point should be — but frame these as proposals for a human, never as settled copy.
 
