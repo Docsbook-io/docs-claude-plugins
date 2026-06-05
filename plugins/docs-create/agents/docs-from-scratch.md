@@ -20,11 +20,11 @@ You do not have a source URL, code repo, or existing docs to crawl. You only hav
   "audience": "B2B sales reps",
   "competitorsHint": ["Apollo", "Outreach"],
   "language": "en",
-  "outputPath": "./docs"
+  "outputPath": "./"
 }
 ```
 
-Required: `topic`, `outputPath` (absolute or relative folder to write into — could be `./`, `./docs`, or `docs-output/<name>`). Optional: `problem` (one sentence — the pain users feel without the product, drives README opening), `differentiator` (one sentence — point of leverage vs alternatives, drives positioning copy; may be `null` if the user did not provide one), `name` (kebab-case slug; derive from topic if missing — e.g. `ai-email-assistant`), `audience` (one sentence; you'll infer if missing), `competitorsHint` (array of competitor names the user already knows — extend during research), `language` (defaults to `en`).
+Required: `topic`, `outputPath` (absolute or relative folder to write into — typically `./` (the repo root, the default for a fresh repo) or `docs-output/<name>`; `./docs` only when the repo already has a `docs/` folder). Optional: `problem` (one sentence — the pain users feel without the product, drives README opening), `differentiator` (one sentence — point of leverage vs alternatives, drives positioning copy; may be `null` if the user did not provide one), `name` (kebab-case slug; derive from topic if missing — e.g. `ai-email-assistant`), `audience` (one sentence; you'll infer if missing), `competitorsHint` (array of competitor names the user already knows — extend during research), `language` (defaults to `en`).
 
 **Use `outputPath` literally** — do not append `<name>` or `docs-output/` to it. The orchestrator already decided where the docs go based on the user's cwd; your job is to fill it. Treat `outputPath` as the root of the docs folder (so `README.md` lands at `<outputPath>/README.md`, guides at `<outputPath>/guides/`, etc.).
 
