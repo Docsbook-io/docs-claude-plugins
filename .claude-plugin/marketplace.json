@@ -31,7 +31,7 @@
       "name": "docs-create",
       "source": "./plugins/docs-create",
       "description": "End-to-end docs bootstrap: crawl a product URL with Haiku — or, when no source exists, research competitors and generate docs from a topic with Sonnet. Enrich with marketing pages (competitor vs, learn/, glossary, use-cases, migration guides), publish to GitHub, configure the Docsbook workspace via MCP. Unified positioning questions (problem + differentiator) across every route shape the README, AI chat prompt, and SEO meta. Guaranteed branding fallback chain in every crawler — no more colorless workspaces. One /docs-create command, five pinned subagents, two MCP servers (markdown-lsp + docsbook). Reads and writes Claude memory across runs so future sessions reuse the user's project context, competitor research, and style preferences.",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "author": {
         "name": "Dan Bondarev",
         "url": "https://github.com/Docsbook-io"
