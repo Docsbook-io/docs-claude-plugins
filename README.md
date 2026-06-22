@@ -139,10 +139,10 @@ Per-run cost: ~$0.05–0.15. Wall time: 10–20s for typical changes.
 |---|---|---|
 | `/docs-sync` command | [commands/docs-sync.md](plugins/docs-sync/commands/docs-sync.md) | Orchestrator — reads diff, delegates to subagents, applies the final patch |
 | `docs-planner` (Haiku) | [agents/docs-planner.md](plugins/docs-sync/agents/docs-planner.md) | Cluster the diff |
-| `docs-searcher` (Haiku) | [agents/docs-searcher.md](plugins/docs-sync/agents/docs-searcher.md) | Find drifted pages via `markdown-lsp` MCP |
+| `docs-searcher` (Haiku) | [agents/docs-searcher.md](plugins/docs-sync/agents/docs-searcher.md) | Find drifted pages via `markdown-lsp` CLI |
 | `docs-editor` (Sonnet) | [agents/docs-editor.md](plugins/docs-sync/agents/docs-editor.md) | Edit `.md` files inside a worktree |
 | `docs-curator` (Sonnet) | [agents/docs-curator.md](plugins/docs-sync/agents/docs-curator.md) | Merge editor outputs |
-| `markdown-lsp` MCP | [.mcp.json](plugins/docs-sync/.mcp.json) | 9 doc-graph tools (`doc_outline`, `doc_search_text`, …) over stdio. Source: [markdown-lsp-mcp](https://github.com/Docsbook-io/markdown-lsp-mcp) |
+| `markdown-lsp` CLI | (bundled via `npx markdown-lsp`) | 9 doc-graph tools (`outline`, `search-text`, …) via CLI. Source: [markdown-lsp](https://github.com/Docsbook-io/markdown-lsp) |
 | Hook installer | [scripts/install-git-hook.sh](plugins/docs-sync/scripts/install-git-hook.sh) | Writes `.git/hooks/pre-push` |
 
 The model is pinned in each subagent's YAML frontmatter — invoking `docs-planner` always runs on Haiku, no matter what the parent session uses.
@@ -226,7 +226,7 @@ Both are registered automatically:
 
 | MCP | Transport | Purpose |
 |---|---|---|
-| `markdown-lsp` | stdio (`npx markdown-lsp-mcp`) | Local doc-graph search (same as `docs-sync`) |
+| `markdown-lsp` CLI | CLI (`npx markdown-lsp`) | Local doc-graph search (same as `docs-sync`) |
 | `docsbook` | HTTP (`https://docsbook.io/api/mcp/server`) | Workspace configuration: branding, UI, AI, SEO, languages |
 
 The `docsbook` MCP needs OAuth on first use. Claude Code prompts for it the first time a subagent calls a `mcp__docsbook__*` tool.
@@ -359,7 +359,7 @@ If you use Cursor/Codex/Copilot, stick with the [docs-skills](https://github.com
 Confirm the plugin is enabled: `/plugin list`. If listed but agents missing, re-run `/plugin install docs-sync@docs-claude-plugins` — the install step copies the agent files.
 
 **`docs-searcher` returns no results.**
-The `markdown-lsp` MCP probably did not start. Check `/mcp` — `markdown-lsp` should be `connected`. If it shows an error, run `npx -y markdown-lsp-mcp --docs ./docs` manually to see the failure.
+The `markdown-lsp` CLI may not be available. Run `npx markdown-lsp workspace-outline ./docs --limit 1` manually to see the failure. If `markdown-lsp` is not installed, run `npm install -g markdown-lsp` or use `npx markdown-lsp` (auto-downloads).
 
 **Pre-push hook never fires.**
 Confirm `.git/hooks/pre-push` exists and is executable. If not, run the installer one-liner above.

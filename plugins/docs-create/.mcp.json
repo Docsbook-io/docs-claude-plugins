@@ -1,9 +1,5 @@
 {
   "mcpServers": {
-    "markdown-lsp": {
-      "command": "npx",
-      "args": ["-y", "markdown-lsp-mcp", "--docs", "./docs"]
-    },
     "docsbook": {
       "type": "http",
       "url": "https://docsbook.io/api/mcp/server"

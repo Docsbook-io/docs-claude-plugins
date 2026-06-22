@@ -11,7 +11,7 @@ Two ways to run this command:
 - **Diff mode (default, no arguments).** A pre-push workflow. Detect markdown that no longer matches the current code on the branch, fix it in parallel git worktrees, and atomically amend the push. Triggered by `git push` via the bundled PreToolUse hook.
 - **Intent mode (`$ARGUMENTS` is non-empty).** A user-driven workflow. The user describes in plain text what should change in the docs — e.g. *"remove all mentions of the legacy export feature"*, *"sync the auth section to describe the new SSO flow"*, *"drop the comparison with feature X from every alternatives page"*. The same four-subagent pipeline runs, but inputs are derived from the intent string instead of a git diff. No commit is amended, no push gate is touched.
 
-In **both** modes, this command orchestrates the same four subagents shipped with this plugin: `docs-planner` (Haiku), `docs-searcher` (Haiku), `docs-editor` (Sonnet), `docs-curator` (Sonnet). The `markdown-lsp` MCP server (bundled) provides the doc-graph search tools.
+In **both** modes, this command orchestrates the same four subagents shipped with this plugin: `docs-planner` (Haiku), `docs-searcher` (Haiku), `docs-editor` (Sonnet), `docs-curator` (Sonnet). The `docs-searcher` subagent uses the `markdown-lsp` CLI (`npx markdown-lsp`) for doc-graph search.
 
 **You MUST run the pipeline through these subagents in both modes.** Do not silently fall back to doing the work yourself just because there is no diff — the whole point of the command is that the four agents handle planning, search, editing and curation in parallel. If you ever find yourself reading and editing docs directly without spawning `docs-planner` / `docs-searcher` / `docs-editor` / `docs-curator`, stop and re-enter the pipeline.
 
@@ -122,12 +122,17 @@ Carry `DOCS_IS_SUBMODULE`, `SUBMODULE_REMOTE`, `SUBMODULE_BRANCH` to Step 7. The
 2. A commit inside the submodule and a push to its remote (gated by user confirmation)
 3. A separate commit in the main repo that bumps the submodule SHA
 
-## Step 2 — Verify the markdown-lsp MCP server is reachable
+## Step 2 — Verify the markdown-lsp CLI is reachable
 
-It is registered by this plugin's `.mcp.json`. Run a probe:
+Run a probe with the `docs-searcher` subagent (it uses the markdown-lsp CLI internally):
 
 ```
-Use the docs-searcher subagent for one trivial query like doc_workspace_outline to confirm MCP is up. If it returns an error, abort the workflow with a clear message — never block push silently.
+Use the docs-searcher subagent for one trivial query like workspace-outline to confirm the CLI is up. If it returns an error, abort the workflow with a clear message — never block push silently.
+```
+
+Alternatively, probe directly:
+```bash
+npx markdown-lsp workspace-outline ./docs --limit 1
 ```
 
 ## Step 3 — Plan clusters (Haiku via docs-planner)
