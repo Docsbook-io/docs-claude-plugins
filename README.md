@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Claude Code only](https://img.shields.io/badge/Claude%20Code-only-orange.svg)](#)
 
-[docs-sync](#docs-sync--pre-push-drift-detection) • [docs-create](#docs-create--end-to-end-docs-bootstrap) • [docs-insights](#docs-insights--recurring-analytics-pipeline) • [How It Fits Together](#how-it-fits-together) • [Troubleshooting](#troubleshooting)
+[docs-sync](#docs-sync--pre-push-drift-detection) • [docs-create](#docs-create--end-to-end-docs-bootstrap) • [docs-insights](#docs-insights--recurring-analytics-pipeline) • [docs-audit](#docs-audit--full-documentation-quality-audit) • [docs-growth](#docs-growth--growth-reasoning-pipeline) • [How It Fits Together](#how-it-fits-together) • [Troubleshooting](#troubleshooting)
 
 </div>
 
@@ -22,13 +22,15 @@ Setting up the fix is painful: wire up subagents by hand, edit `.mcp.json`, writ
 
 ## The Solution
 
-Three plugins. One command each. Every piece — subagents, MCP servers, git hooks — wired automatically on install.
+Five plugins. One command each (`docs-sync` and `docs-audit` ship several — see their sections). Every piece — subagents, MCP servers, git hooks — wired automatically on install.
 
 | Plugin | What it does |
 |---|---|
-| **`docs-sync`** | Pre-push `code↔docs` drift detection: planner → searcher → editor → curator. |
+| **`docs-sync`** | Pre-push `code↔docs` drift detection: planner → searcher → editor → curator. Also ships 6 one-shot platform setup commands (PR CI gate, stale-content watcher, AI chat tuning, release announcements, translation). |
 | **`docs-create`** | End-to-end docs bootstrap from a URL: crawl → publish to GitHub → configure Docsbook workspace. |
 | **`docs-insights`** | Recurring analytics pipeline: collector → clusterer → reporter → archivist. Produces schema-validated JSON reports under `.docsbook/insights/` so future actor agents can act on them. |
+| **`docs-audit`** | Full documentation quality audit, read-only: 17 checks (structure, style, SEO, accessibility, i18n, AI retrieval, trust, pricing consistency, and more) run through one pinned auditor and return prioritized JSON findings. |
+| **`docs-growth`** | Growth-reasoning pipeline over your product source-of-truth: three lenses (segment / funnel / competitor) reason grounded in real analytics and append findings back into your knowledge base. |
 
 ---
 
@@ -178,6 +180,21 @@ Drop `.docs-sync.json` at the repo root:
 | `threshold` | `0.6` | Confidence floor for `docs-editor` to act |
 | `diffCap` | `0.4` | Max share of a page editor may rewrite per pass |
 | `worktreeDir` | `.claude/worktrees` | Where parallel worktrees live (kept on error for triage) |
+
+### Platform Automation Commands
+
+Six one-shot setup commands ship alongside `/docs-sync`. Unlike the drift pipeline above, these are flat, single-invocation commands — no worktrees, no fan-out — that either generate a GitHub Actions workflow, register a Docsbook webhook, or both. `docs-sync`'s `.mcp.json` registers the `docsbook` HTTP MCP server for the five that need it.
+
+| Command | Plan | Produces |
+|---|---|---|
+| `/docs-pr-check` | Free | `.github/workflows/docsbook-docs-check.yml` — CI gate checking code↔docs ratio, frontmatter, broken links on every PR |
+| `/docs-stale-watcher` | PRO+ | `.github/workflows/docsbook-stale-handler.yml` + a `content.outdated` webhook — turns stale-page notifications into GitHub Issues |
+| `/docs-tune-ai-chat` | PRO | Rewrites the workspace's AI chat system prompt from real negative feedback + unanswered questions, applied only after you confirm the diff |
+| `/docs-release-announce` | PRO | `.github/workflows/docsbook-release-announce.yml` + a release webhook — dispatches Slack/email on `release: published` |
+| `/docs-enable-translation` | PRO | Enables up to 15 languages, switches translation mode to `auto`, updates `AGENTS.md` |
+| `/docs-translate-webhook` | PRO+ | Switches translation mode to `external`, registers a `translation.requested` webhook, scaffolds a Vercel/Express handler you deploy with your own translation logic |
+
+Knowledge base for these six: [docs-skills/automation/](https://github.com/Docsbook-io/docs-skills/tree/main/skills/automation).
 
 ---
 
@@ -334,6 +351,116 @@ The analyzer subagents are *executors*. The matching skills in [docs-skills/obse
 - [docs-visitor-cohort](https://github.com/Docsbook-io/docs-skills/blob/main/skills/observability/docs-visitor-cohort/SKILL.md)
 - [docs-link-click-analyzer](https://github.com/Docsbook-io/docs-skills/blob/main/skills/observability/docs-link-click-analyzer/SKILL.md)
 - [docs-question-clusterer](https://github.com/Docsbook-io/docs-skills/blob/main/skills/observability/docs-question-clusterer/SKILL.md)
+
+---
+
+## docs-audit — Full Documentation Quality Audit
+
+One pinned Sonnet subagent (`docs-auditor`) runs any of 17 read-only checks against a page, a folder, or the full docs tree, and returns machine-readable JSON findings. Where `docs-insights` reads *analytics* (what visitors do), `docs-audit` reads *content* (whether the pages themselves are good) — structure, tone, accessibility, SEO, i18n parity, and whether AI assistants can actually retrieve and cite what you wrote.
+
+### Install
+
+```
+/plugin marketplace add Docsbook-io/docs-claude-plugins
+/plugin install docs-audit@docs-claude-plugins
+```
+
+Copies the `docs-auditor` subagent into `.claude/agents/`, registers the Docsbook MCP server (HTTP, optional — most checks work text-only), and ships 18 slash commands.
+
+### Quick Start
+
+```
+/docs-analyze                          # every applicable check, full docs/ tree
+/docs-analyze docs/guides/webhooks.md  # every applicable check, one page
+/docs-ai-retrieval docs/quick-start.md # shortcut: only the AI-retrieval check
+```
+
+### Slash commands
+
+| Command | Purpose |
+|---|---|
+| `/docs-analyze` | Run every applicable check; produce one prioritized report |
+| `/docs-content-types` | Shortcut: Diátaxis classification (tutorial/how-to/reference/explanation) |
+| `/docs-structure-templates` | Shortcut: frontmatter, heading hierarchy, code-block tags |
+| `/docs-style-tone` | Shortcut: passive voice, filler words, terminology consistency |
+| `/docs-audience` | Shortcut: vocabulary mismatch, undeclared prerequisites |
+| `/docs-navigation-linking` | Shortcut: broken links, orphan pages, anchor text (needs the full graph) |
+| `/docs-a11y` | Shortcut: WCAG 2.1 AA — alt text, heading hierarchy, screen-reader concerns |
+| `/docs-media-audit` | Shortcut: image formats, sizes, stale screenshots |
+| `/docs-maintenance` | Shortcut: stale content, deprecated pages, TODO/FIXME |
+| `/docs-i18n` | Shortcut: translation parity, hreflang — auto-skips on single-language workspaces |
+| `/docs-seo-audit` | Shortcut: titles, descriptions, GEO/AI Overviews — grounded in real GSC positions when connected |
+| `/docs-ai-retrieval` | Shortcut: is each page chunk-retrievable by an AI chat, not just readable by a human |
+| `/docs-trust-audit` | Shortcut: verifies external claims (integrations, partner limits) against their live source |
+| `/docs-pricing-consistency` | Shortcut: docs' quoted prices/plans against the live pricing page |
+| `/docs-competitor-gap` | Shortcut: topics a named competitor covers that you don't (`--competitor <url>`) |
+| `/docs-gap-finder` | Shortcut: top pages worth creating, from failed searches + unanswered questions |
+| `/docs-rank-recovery` | Shortcut: pages ranking page 1–2 but not converting clicks — rewrite queue |
+| `/docs-title-rewriter` | Shortcut: rewrites titles/openings for zero-click search results (PRO) |
+
+### Subagent
+
+| Subagent | Model | Job | Tools |
+|---|---|---|---|
+| `docs-auditor` | Sonnet | Runs one named check (`CHECK:` input), reads the matching docs-skills rules, returns JSON findings | Read, Grep, Glob, Bash, WebFetch, `mcp__docsbook__get_*` (scoped per check) |
+
+### Read-only, with three explicit exceptions
+
+Every check is strictly read-only — no doc page is ever edited, no setting changed. Three checks may still act, and only opt-in:
+
+- `docs-gap-finder` opens a GitHub Issue per gap only when called with `--open-issues`.
+- `docs-title-rewriter` and `docs-rank-recovery` return their rewrite **as text in the finding** — ready to paste, never applied automatically.
+
+### Knowledge base
+
+The `docs-auditor` subagent is the *executor* for all 17 checks; the matching [docs-skills](https://github.com/Docsbook-io/docs-skills) entries are the *knowledge base* — issue types, severities, guardrails per check:
+
+- [docs-content-types](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-content-types/SKILL.md) · [docs-structure-templates](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-structure-templates/SKILL.md) · [docs-style-tone](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-style-tone/SKILL.md) · [docs-audience](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-audience/SKILL.md) · [docs-navigation-linking](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-navigation-linking/SKILL.md)
+- [docs-accessibility](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-accessibility/SKILL.md) · [docs-media](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-media/SKILL.md) · [docs-maintenance](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-maintenance/SKILL.md) · [docs-i18n](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-i18n/SKILL.md)
+- [docs-seo](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-seo/SKILL.md) · [docs-ai-retrieval](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-ai-retrieval/SKILL.md) — writing for retrieval, not just reading; the chunk is the unit of optimization, not the page
+- [docs-trust-audit](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-trust-audit/SKILL.md) · [docs-pricing-consistency](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-pricing-consistency/SKILL.md) · [docs-competitor-gap](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-competitor-gap/SKILL.md)
+- [docs-gap-finder](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-gap-finder/SKILL.md) · [docs-rank-recovery](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-rank-recovery/SKILL.md) · [docs-title-rewriter](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-title-rewriter/SKILL.md)
+
+---
+
+## docs-growth — Growth-Reasoning Pipeline
+
+Three pinned subagents (`segment-analyst`, `funnel-analyst`, `competitor-analyst`) reason about who buys your product, how they enter it, and who competes with it — grounded in real analytics via `docs-insights` where data exists, clearly labelled `simulated` where it doesn't — then **append** what they learn back into your private knowledge base (`about/`, `.agents/product-marketing.md`, or wherever your source-of-truth lives). It never touches product code or client-facing docs.
+
+### Install
+
+```
+/plugin marketplace add Docsbook-io/docs-claude-plugins
+/plugin install docs-growth@docs-claude-plugins
+```
+
+### Quick Start
+
+```
+/enrich-audience --sot-dir about/ --workspace docsbook-io/docs
+```
+
+### Slash command
+
+| Command | Purpose |
+|---|---|
+| `/enrich-audience` | Run all three lenses (or a subset via `--lenses`), reconcile findings, append to the source-of-truth |
+
+### Subagents
+
+| Subagent | Model | Job |
+|---|---|---|
+| `segment-analyst` | Sonnet | Who buys — segments, JTBD, persona gaps |
+| `funnel-analyst` | Sonnet | How they enter — funnel/GTM paths, entry-point friction |
+| `competitor-analyst` | Sonnet | Who competes — live market changes, positioning gaps |
+
+### Additive, reversible, never silent
+
+Every write is wrapped in a marked block (`<!-- BEGIN docs-audience-enricher · <lens> · <date> · evidence:<measured\|simulated> -->`) so a re-run replaces its own block instead of duplicating it, and human-authored prose outside those markers is never touched. The command does not commit or push — persisting the enriched source-of-truth is the caller's responsibility.
+
+### Knowledge base
+
+- [growth skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/growth/docs-audience-enricher/SKILL.md)
 
 ---
 
