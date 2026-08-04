@@ -85,6 +85,34 @@
       "license": "MIT"
     },
     {
+      "name": "docs-audit",
+      "source": "./plugins/docs-audit",
+      "description": "Full documentation quality audit, read-only. One pinned Sonnet auditor runs any of 17 checks — content types, structure, style, audience, navigation, SEO, accessibility, i18n, media, maintenance, trust, pricing consistency, competitor gap, rank recovery, title rewriting, content gaps, AI retrieval — and returns machine-readable JSON findings. Never edits a doc page; that is docs-sync's or docs-create's job.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Dan Bondarev",
+        "url": "https://github.com/Docsbook-io"
+      },
+      "keywords": [
+        "docs",
+        "audit",
+        "quality",
+        "accessibility",
+        "seo",
+        "style",
+        "i18n",
+        "diataxis",
+        "ai-retrieval",
+        "geo",
+        "aeo",
+        "subagents",
+        "sonnet",
+        "mcp",
+        "docsbook"
+      ],
+      "license": "MIT"
+    },
+    {
       "name": "docs-growth",
       "source": "./plugins/docs-growth",
       "description": "Growth-reasoning pipeline over a product source-of-truth. Three pinned subagents (segment-analyst, funnel-analyst, competitor-analyst) reason about who buys, how they enter, and who competes — grounded in real analytics via docs-insights where data exists, simulated only where it cannot — and append what they learn back into the private knowledge base (about/, product-marketing context). Proposes and enriches; never touches product code or client docs. Emits schema-validated JSON for downstream opportunity-mapping or experiment-planning agents.",
