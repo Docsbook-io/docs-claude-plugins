@@ -1,0 +1,140 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Docsbook-io/docs-skills/main/schema/skill.schema.json",
+  "title": "Docsbook Skill Frontmatter",
+  "description": "JSON Schema for the YAML frontmatter of a SKILL.md file in the docs-skills catalog.",
+  "type": "object",
+  "required": [
+    "name",
+    "description",
+    "metadata"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique skill identifier (kebab-case).",
+      "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$",
+      "minLength": 3,
+      "maxLength": 64
+    },
+    "description": {
+      "type": "string",
+      "description": "Short human-readable description used for discovery and AI matching.",
+      "minLength": 20,
+      "maxLength": 2000
+    },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "version",
+        "category"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Semver version of the skill.",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$"
+        },
+        "category": {
+          "type": "string",
+          "description": "High-level taxonomy bucket.",
+          "enum": [
+            "analysis",
+            "creation",
+            "publishing",
+            "automation",
+            "observability",
+            "growth",
+            "planning"
+          ]
+        },
+        "mode": {
+          "type": "string",
+          "description": "What the skill is allowed to do to the docs. `audit` reports and changes nothing. `refactor` rewrites existing pages, preserving meaning, and never creates new ones. `authoring` is a rule set loaded BEFORE new writing, and never repairs old pages. `platform` configures the workspace itself rather than the content. The three content modes are mutually exclusive on purpose: a skill that both audits and rewrites cannot be trusted to do either.",
+          "enum": [
+            "audit",
+            "refactor",
+            "authoring",
+            "platform"
+          ]
+        },
+        "requires_docsbook_mcp": {
+          "type": "boolean",
+          "description": "True only for skills that genuinely need the Docsbook platform (e.g. workspace configuration, webhooks). Analysis/read skills must NOT set this — they state a need and work on any docs folder; declare optional accelerators via `accelerated_by` instead."
+        },
+        "accelerated_by": {
+          "type": "array",
+          "description": "Optional, NON-gating list of tools that make the skill faster/cheaper when connected (e.g. markdown-lsp, docsbook-mcp). The skill still works without them via plain file reads / grep / find. Entries are bare tool names; inline YAML comments are allowed.",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "requires_plan": {
+          "type": "string",
+          "description": "Minimum Docsbook plan required to use this skill. `business` is the tier that unlocks webhook registration (canRegisterWebhooks in the product's plan-capabilities), bring-your-own API keys, UTM analytics and retention cohorts. A skill that registers a webhook needs it; claiming `pro` there walks a paying customer into a refusal they cannot act on.",
+          "enum": [
+            "free",
+            "pro",
+            "pro_plus",
+            "business"
+          ]
+        },
+        "uses_mcp_tools": {
+          "type": "array",
+          "description": "List of Docsbook MCP tool names the skill calls.",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "uniqueItems": true
+        },
+        "produces_files": {
+          "type": "array",
+          "description": "Files the skill writes or modifies in the user's repo.",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "output_schema": {
+          "type": "string",
+          "description": "URL of a JSON Schema the skill's machine-readable output conforms to.",
+          "format": "uri"
+        },
+        "pipeline_subagents": {
+          "type": "array",
+          "description": "Names of pinned subagents this skill orchestrates, in pipeline order.",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "keywords": {
+          "type": "array",
+          "description": "Discovery keywords used by find_skill matching.",
+          "items": {
+            "type": "string",
+            "minLength": 2
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "measures": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "description": "Metric ids from metrics/metric-dictionary.json that this skill interprets. Reference the dictionary instead of restating what a metric means in prose — the meaning, its confounders and the metrics it must be read alongside are defined once there."
+        },
+        "metric_dictionary": {
+          "type": "string",
+          "description": "Relative path to the metric dictionary this skill reads (usually ../../../metrics/metric-dictionary.json)."
+        }
+      }
+    }
+  }
+}

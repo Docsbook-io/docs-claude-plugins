@@ -1,0 +1,32 @@
+name: CI
+
+# This repository had no CI at all. `claude plugin validate` was already able to
+# catch the version drift between marketplace.json and plugin.json that sat here
+# unnoticed — there was simply nothing running it.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # The gate that makes a stale skills catalog impossible to merge: re-run
+      # the sync against the pinned upstream and fail if the committed tree
+      # differs by a byte. A bot PR would only be a notification; this is a wall.
+      - name: Skills match the pinned docs-skills release
+        run: node scripts/sync-skills.mjs --check
+
+      # Versions, MCP tool names and namespaces, command/skill collisions,
+      # metric_dictionary paths. See the header of the script for why each check
+      # exists — every one of them was a real defect in this repo.
+      - name: Plugin guardrails
+        run: node scripts/check-plugin.mjs

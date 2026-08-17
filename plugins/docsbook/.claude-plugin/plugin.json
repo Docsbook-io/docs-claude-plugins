@@ -1,0 +1,39 @@
+{
+  "name": "docsbook",
+  "version": "1.0.0",
+  "description": "Everything Docsbook does inside Claude Code: pre-push code↔docs drift detection, docs bootstrap from a URL or from scratch, a read-only quality audit, a recurring analytics pipeline, growth reasoning, and the full docs-skills catalog — over the Docsbook MCP server.",
+  "author": {
+    "name": "Dan Bondarev",
+    "email": "dan@docsbook.io",
+    "url": "https://github.com/Docsbook-io"
+  },
+  "homepage": "https://docsbook.io",
+  "repository": "https://github.com/Docsbook-io/docs-claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "docs",
+    "documentation",
+    "drift",
+    "sync",
+    "audit",
+    "seo",
+    "accessibility",
+    "i18n",
+    "analytics",
+    "insights",
+    "growth",
+    "mcp",
+    "subagents",
+    "skills",
+    "docsbook"
+  ],
+  "userConfig": {
+    "WORKSPACE": {
+      "type": "string",
+      "title": "Docsbook workspace",
+      "description": "Your workspace as owner/repo, e.g. acme-co/api-docs. Leave blank and commands will pick from your workspace list on each run.",
+      "required": false,
+      "default": ""
+    }
+  }
+}

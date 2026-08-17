@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://docsbook.io/schemas/metric-dictionary.schema.json",
+  "title": "Docsbook metric dictionary",
+  "description": "Machine-readable business meaning for each Docsbook analytics metric. Skills reference metric ids via metadata.measures instead of restating interpretations in prose, so the meaning is defined once and cannot drift between skills.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "metrics"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "updated": { "type": "string", "format": "date" },
+    "about": { "type": "string" },
+    "metrics": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/metric" }
+    }
+  },
+  "definitions": {
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "label", "category", "unit", "direction",
+        "business_meaning", "why_it_matters", "confounders", "mcp_patterns"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Stable identifier referenced from a skill's metadata.measures."
+        },
+        "label": { "type": "string", "minLength": 2, "maxLength": 60 },
+        "category": {
+          "type": "string",
+          "enum": ["retention", "activation", "engagement", "findability", "content_quality", "context"]
+        },
+        "formula": {
+          "type": ["string", "null"],
+          "description": "How it is computed, in words. Documentation, not an executable expression."
+        },
+        "unit": { "type": "string", "enum": ["percent", "count", "duration", "score"] },
+        "direction": {
+          "type": "string",
+          "enum": ["higher_is_better", "lower_is_better", "context_dependent"],
+          "description": "context_dependent means the metric CANNOT be judged alone — see pairs_with."
+        },
+        "accuracy": {
+          "type": "string",
+          "enum": ["exact", "estimate"],
+          "description": "estimate = derived from visitor_id, which is a hashed IP. Must be reported as a trend, never as an exact headcount."
+        },
+        "plan": { "type": "string", "enum": ["free", "pro", "pro_plus", "business"] },
+        "business_meaning": {
+          "type": "string",
+          "minLength": 20,
+          "description": "One sentence, in the owner's language. What it means for their business — not what it counts."
+        },
+        "why_it_matters": {
+          "type": "string",
+          "minLength": 40,
+          "description": "Why an owner should care, and what decision it informs."
+        },
+        "benchmarks": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "good": { "type": "number" },
+            "warning": { "type": "number" },
+            "critical": { "type": "number" }
+          },
+          "description": "Null when there is no defensible threshold. Do not invent one — a made-up benchmark is worse than none."
+        },
+        "confounders": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 20 },
+          "description": "What makes this number lie. Required: an agent that reads a metric without knowing its failure modes gives confidently wrong advice."
+        },
+        "typical_causes": { "type": "array", "items": { "type": "string" } },
+        "recommended_actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["when", "action"],
+            "properties": {
+              "when": { "type": "string" },
+              "action": { "type": "string", "minLength": 10 }
+            }
+          }
+        },
+        "related_metrics": { "type": "array", "items": { "type": "string" } },
+        "pairs_with": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["metric", "interpretation"],
+            "properties": {
+              "metric": { "type": "string" },
+              "interpretation": {
+                "type": "string",
+                "minLength": 30,
+                "description": "What the PAIR says that neither says alone. This is the field that stops an agent flagging a terminal success page as broken."
+              }
+            }
+          },
+          "description": "Most single metrics are ambiguous; this encodes the disambiguation as data rather than leaving it to prose in each skill."
+        },
+        "mcp_patterns": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "description": "Where this metric actually comes from. Either an analytics pattern id (src/lib/analytics/patterns.ts) or a first-class data source that bypasses the pattern layer — Search Console metrics arrive straight from the platform, with no pattern behind them. Kept under the original key so the compiled copy in the product does not have to move; the guard resolves both registries. Name a source that exists: an invented one means the metric has no way of being read."
+        }
+      }
+    }
+  }
+}
