@@ -101,6 +101,8 @@ Two things there will otherwise make you confidently wrong:
    with the dated data window, then any disabled platform SEO switch, then the
    5-20 band.
 
+> **The JSON is a machine format, not an answer.** It exists so an orchestrator (`docs-analyze`) or a host application can consume the findings — the `action` and `constraints` fields are instructions for a tool, not prose for a person. NEVER paste this JSON into a chat reply or hand it to a human as "the report": a wall of `"severity": "high"` reads as a system error and buries the one line that mattered. When a person asked for the audit, present the findings the way a human editor would — the worst problem first, named in plain language, with the before/after — and offer to apply the fixes. If your host has a way to render changes for approval (a diff or review UI, e.g. Docsbook's `propose_changes`), that is the answer; the JSON stays under it.
+
 ## Degraded mode — no live search data
 
 The skill still works. It does not pretend to.

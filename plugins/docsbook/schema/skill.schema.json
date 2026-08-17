@@ -74,11 +74,12 @@
         },
         "requires_plan": {
           "type": "string",
-          "description": "Minimum Docsbook plan required to use this skill.",
+          "description": "Minimum Docsbook plan required to use this skill. `business` is the tier that unlocks webhook registration (canRegisterWebhooks in the product's plan-capabilities), bring-your-own API keys, UTM analytics and retention cohorts. A skill that registers a webhook needs it; claiming `pro` there walks a paying customer into a refusal they cannot act on.",
           "enum": [
             "free",
             "pro",
-            "pro_plus"
+            "pro_plus",
+            "business"
           ]
         },
         "uses_mcp_tools": {

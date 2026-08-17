@@ -1,12 +1,12 @@
 ---
 name: docs-release-announce
-description: Wire up release announcements for a Docsbook workspace. Registers a Docsbook webhook on release events and generates a GitHub Actions workflow that dispatches notifications to Slack and/or email when a new release is published. Requires PRO plan.
+description: Wire up release announcements for a Docsbook workspace. Registers a Docsbook webhook on release events and generates a GitHub Actions workflow that dispatches notifications to Slack and/or email when a new release is published. Requires BUSINESS plan — registering any webhook does.
 metadata:
   version: 1.0.0
   category: automation
   mode: platform
   requires_docsbook_mcp: true
-  requires_plan: pro
+  requires_plan: business
   uses_mcp_tools:
     - list_workspaces
     - register_webhook_content_indexed

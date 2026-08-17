@@ -6,7 +6,7 @@ metadata:
   category: creation
   mode: refactor
   accelerated_by:
-    - docsbook-mcp      # list_content_widgets for the live widget contracts; get_workspace for existing branding/links
+    - docsbook-mcp      # live widget contracts; the workspace's existing branding and links
   uses_mcp_tools:
     - list_content_widgets
   keywords: [sales, conversion, cta, pricing, funnel, monetization, plans, free-tier, upgrade, trial]
@@ -22,7 +22,7 @@ This skill fixes that in one pass. It is a **content** skill: it decides which p
 
 ## Step 0 — Read the CTA the owner already set (do this first)
 
-Before classifying anything, ask the platform whether this project already has a declared call to action. On Docsbook that is the **Call To Action URL** (Branding tab) — `cta_url` on `get_workspace_info` / `get_workspace`, saved by `update_branding(cta_url: …)`. Any other platform: whatever field records "the page this documentation should drive readers to".
+Before classifying anything, ask the platform whether this project already has a declared call to action. On Docsbook that is the **Call To Action URL** (Branding tab) — it comes back with the workspace's configuration, and is saved by `update_branding(cta_url: …)`. Any other platform: whatever field records "the page this documentation should drive readers to".
 
 **When it is set, it wins over anything you infer.** The owner typed it; a `/pricing` page you found by crawling is a guess about their funnel, and their answer is not. Concretely:
 

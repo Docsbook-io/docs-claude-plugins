@@ -1,12 +1,12 @@
 ---
 name: docs-stale-watcher
-description: Register a Docsbook content.outdated webhook and generate a GitHub Actions workflow that converts each stale-content notification into a GitHub Issue in the documentation repository. Keeps docs maintenance visible in the team's normal issue triage flow. Requires PRO+ plan.
+description: Register a Docsbook content.outdated webhook and generate a GitHub Actions workflow that converts each stale-content notification into a GitHub Issue in the documentation repository. Keeps docs maintenance visible in the team's normal issue triage flow. Requires BUSINESS plan — registering any webhook does.
 metadata:
   version: 1.0.0
   category: automation
   mode: platform
   requires_docsbook_mcp: true
-  requires_plan: pro_plus
+  requires_plan: business
   uses_mcp_tools:
     - list_workspaces
     - register_webhook_content_outdated

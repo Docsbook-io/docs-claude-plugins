@@ -19,6 +19,8 @@ metadata:
 2. **Apply checklist** — scan each page for the three big categories: alt text, heading hierarchy, and anchor text. Then cover lists, tables, code blocks, video, and text readability.
 3. **Produce report** — return one JSON issue object per finding, sorted by severity.
 
+> **The JSON is a machine format, not an answer.** It exists so an orchestrator (`docs-analyze`) or a host application can consume the findings — the `action` and `constraints` fields are instructions for a tool, not prose for a person. NEVER paste this JSON into a chat reply or hand it to a human as "the report": a wall of `"severity": "high"` reads as a system error and buries the one line that mattered. When a person asked for the audit, present the findings the way a human editor would — the worst problem first, named in plain language, with the before/after — and offer to apply the fixes. If your host has a way to render changes for approval (a diff or review UI, e.g. Docsbook's `propose_changes`), that is the answer; the JSON stays under it.
+
 ## Guardrails
 
 - Contrast ratios and runtime keyboard behavior depend on the rendered theme — these require a live browser check and are out of scope for this skill.

@@ -45,7 +45,7 @@ const LOCK_PATH = join(SKILLS_OUT, ".sync-lock.json")
 
 /** Pin. Bump deliberately; CI re-runs this script and diffs the result. */
 const UPSTREAM = "docs-skills"
-const UPSTREAM_VERSION = "1.8.28"
+const UPSTREAM_VERSION = "1.8.29"
 
 const CHECK = process.argv.includes("--check")
 
