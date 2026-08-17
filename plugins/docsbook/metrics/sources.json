@@ -1,0 +1,78 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-08-01",
+  "about": "Where metrics come from. Every value in a metric's `mcp_patterns` must appear here, so a metric cannot claim a source that has no way of being read. Mirrored by hand rather than imported: CI for this catalog checks out this repository alone, so a source list living in the product would make the guard green here and wrong in CI.",
+  "sources": [
+    {
+      "id": "visit_outcomes",
+      "kind": "analytics_pattern",
+      "reported_by": "get_visit_outcomes"
+    },
+    {
+      "id": "dead_end_pages",
+      "kind": "analytics_pattern",
+      "reported_by": "get_dead_end_pages"
+    },
+    {
+      "id": "exit_pages",
+      "kind": "analytics_pattern",
+      "reported_by": "get_analytics"
+    },
+    {
+      "id": "search_effectiveness",
+      "kind": "analytics_pattern",
+      "reported_by": "get_failed_searches"
+    },
+    {
+      "id": "content_health",
+      "kind": "analytics_pattern",
+      "reported_by": "get_content_health"
+    },
+    {
+      "id": "traffic_overview",
+      "kind": "analytics_pattern",
+      "reported_by": "get_analytics"
+    },
+    {
+      "id": "visits",
+      "kind": "analytics_pattern",
+      "reported_by": "get_visits"
+    },
+    {
+      "id": "route_patterns",
+      "kind": "analytics_pattern",
+      "reported_by": "get_route_patterns"
+    },
+    {
+      "id": "reverse_funnel",
+      "kind": "analytics_pattern",
+      "reported_by": "get_reverse_funnel"
+    },
+    {
+      "id": "forward_funnel",
+      "kind": "analytics_pattern",
+      "reported_by": "get_forward_funnel"
+    },
+    {
+      "id": "retention",
+      "kind": "analytics_pattern",
+      "reported_by": "get_retention"
+    },
+    {
+      "id": "search_zero_click",
+      "kind": "analytics_pattern",
+      "reported_by": "get_search_zero_click"
+    },
+    {
+      "id": "rage_signals",
+      "kind": "analytics_pattern",
+      "reported_by": "get_rage_signals"
+    },
+    {
+      "id": "search_rankings",
+      "kind": "platform_source",
+      "reported_by": "get_search_rankings",
+      "note": "Google Search Console, pulled and cached by the platform. There is no analytics pattern behind it — the numbers are Google's, not Docsbook's own event stream, which is why its freshness and grain caveats differ from every other source here."
+    }
+  ]
+}

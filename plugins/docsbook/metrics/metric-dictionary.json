@@ -1,0 +1,946 @@
+{
+  "$schema": "../schema/metric.schema.json",
+  "version": "1.2.0",
+  "updated": "2026-08-01",
+  "about": "What each Docsbook metric MEANS for the business — not what it counts. An agent reading a number should be able to say what to do about it, what would make it lie, and which other metric has to be read alongside it before drawing a conclusion. `pairs_with` is the important part: most single metrics are ambiguous, and the ambiguity is what makes an agent give confidently wrong advice.",
+  "metrics": [
+    {
+      "id": "dead_end_rate",
+      "label": "Dead-end rate",
+      "category": "retention",
+      "formula": "dead_end_visits / (total_visits - bounce_visits)",
+      "unit": "percent",
+      "direction": "lower_is_better",
+      "accuracy": "estimate",
+      "plan": "pro",
+      "business_meaning": "The share of people who tried to get something done in the docs and left with nothing.",
+      "why_it_matters": "This is the closest thing to direct evidence that documentation is failing its readers. Unlike bounce rate it excludes people who never engaged, so every visit it counts is someone who made an effort — searched, asked the AI, or opened several pages — and still walked away empty-handed. Traffic going up while this goes up means the docs are getting worse, not better.",
+      "benchmarks": {
+        "good": 0.15,
+        "warning": 0.3,
+        "critical": 0.45
+      },
+      "confounders": [
+        "Bot traffic inflates it badly — crawlers never copy code or fire exit beacons, so an unfiltered window reads near 100%. Docsbook excludes them by default.",
+        "Visitors are identified by a hashed IP: a corporate NAT merges many readers into one, mobile networks split one reader across several. Read the trend, never quote it as an exact headcount.",
+        "Below ~30 visits a single reader moves this by whole points. Docsbook withholds the percentage and reports counts instead; say 'not enough data' rather than quoting a number."
+      ],
+      "typical_causes": [
+        "A question readers have that no page answers",
+        "A page exists but does not actually answer the question it ranks for",
+        "The answer exists but is not findable — wrong title, missing from navigation, absent from search"
+      ],
+      "recommended_actions": [
+        {
+          "when": "above_warning",
+          "action": "Pull dead_end_pages and rewrite the top three by volume."
+        },
+        {
+          "when": "rising_trend",
+          "action": "Check whether a release shipped without docs — compare against the dates in the changelog."
+        }
+      ],
+      "related_metrics": [
+        "self_serve_resolution_rate",
+        "exit_rate",
+        "content_health_score"
+      ],
+      "pairs_with": [
+        {
+          "metric": "exit_rate",
+          "interpretation": "High on both = a genuinely broken page. High exit with LOW dead-end = a terminal success page: readers got what they came for and left. Recommending a rewrite there makes the docs worse."
+        },
+        {
+          "metric": "search_ctr",
+          "interpretation": "Dead ends plus a low click-through means readers are finding results and rejecting them — the titles and snippets are lying, which is a far cheaper fix than rewriting the pages."
+        }
+      ],
+      "mcp_patterns": [
+        "visit_outcomes",
+        "dead_end_pages"
+      ]
+    },
+    {
+      "id": "self_serve_resolution_rate",
+      "label": "Self-serve resolution rate",
+      "category": "retention",
+      "formula": "success_visits / (success_visits + dead_end_visits)",
+      "unit": "percent",
+      "direction": "higher_is_better",
+      "accuracy": "estimate",
+      "plan": "pro",
+      "business_meaning": "Of the readers who came with an intent, the share who resolved it without needing a human.",
+      "why_it_matters": "This is the honest version of the support-deflection number a docs platform is usually bought for. It is the metric to quote to a buyer who asks 'how much support load will this save', because someone who gave up lands in the denominator and drags it down.",
+      "benchmarks": {
+        "good": 0.75,
+        "warning": 0.55,
+        "critical": 0.4
+      },
+      "confounders": [
+        "Do NOT convert this into a deflection rate or a dollar figure on Docsbook's behalf. Deflection counts someone who gave up the same as someone who got help, which is exactly the inflation a technical buyer will catch.",
+        "A dollar estimate is only defensible if the owner supplies their own cost-per-ticket. Present it as their assumption, never as our claim.",
+        "Visitors are identified by a hashed IP: shared office networks merge readers into one, mobile networks split one reader across several. Report the direction of travel, not an exact count."
+      ],
+      "typical_causes": [
+        "Answers exist but are split across pages, so no single visit completes",
+        "The AI assistant cannot answer from the current content"
+      ],
+      "recommended_actions": [
+        {
+          "when": "below_warning",
+          "action": "Cross-reference unanswered AI questions with zero-result searches; a topic appearing in both is a confirmed gap, not a one-off."
+        }
+      ],
+      "related_metrics": [
+        "dead_end_rate",
+        "ai_answer_rate"
+      ],
+      "pairs_with": [
+        {
+          "metric": "dead_end_rate",
+          "interpretation": "Two views of the same population. Quote resolution to a buyer (it sounds like value delivered) and dead-end to an author (it names work to do)."
+        }
+      ],
+      "mcp_patterns": [
+        "visit_outcomes"
+      ]
+    },
+    {
+      "id": "exit_rate",
+      "label": "Exit rate",
+      "category": "engagement",
+      "formula": "visits_ending_on_page / visits_including_page",
+      "unit": "percent",
+      "direction": "context_dependent",
+      "accuracy": "estimate",
+      "plan": "pro",
+      "business_meaning": "How often a page is the last thing a reader sees before leaving.",
+      "why_it_matters": "It localises where readers are lost. On its own it is a neutral fact, not a verdict — which is precisely why it must never be reported alone.",
+      "benchmarks": null,
+      "confounders": [
+        "A high exit rate is GOOD on a terminal page — an install snippet, a reference table someone copies. Judging pages by exit rate alone recommends breaking the best ones.",
+        "Exit is recorded by a beacon at unload; a hard browser crash loses it, so absolute levels are slightly understated. Compare pages against each other, not against 100%.",
+        "Visitors are identified by a hashed IP: shared office networks merge readers into one, mobile networks split one reader across several. Report the direction of travel, not an exact count.",
+        "Bot traffic is excluded before this is computed; comparing it against raw pageview totals will not reconcile."
+      ],
+      "typical_causes": [
+        "The reader finished",
+        "The reader gave up",
+        "The page is a dead end in the navigation"
+      ],
+      "recommended_actions": [
+        {
+          "when": "high_with_dead_ends",
+          "action": "Rewrite: readers are leaving unsatisfied."
+        },
+        {
+          "when": "high_with_successes",
+          "action": "Leave it alone and study it — this is what a page that works looks like."
+        }
+      ],
+      "related_metrics": [
+        "dead_end_rate",
+        "content_health_score"
+      ],
+      "pairs_with": [
+        {
+          "metric": "dead_end_rate",
+          "interpretation": "The pairing that turns exit rate from trivia into a decision. Without it you cannot tell 'finished' from 'gave up'."
+        }
+      ],
+      "mcp_patterns": [
+        "exit_pages",
+        "dead_end_pages"
+      ]
+    },
+    {
+      "id": "bounce_rate",
+      "label": "Bounce rate",
+      "category": "engagement",
+      "formula": "bounce_visits / total_visits",
+      "unit": "percent",
+      "direction": "context_dependent",
+      "accuracy": "estimate",
+      "plan": "pro",
+      "business_meaning": "The share of arrivals that were never really visits — one page, under three seconds, nothing else.",
+      "why_it_matters": "Mostly a hygiene signal. It is deliberately excluded from the dead-end denominator so accidental arrivals cannot flatter or damage the headline number.",
+      "benchmarks": null,
+      "confounders": [
+        "A high bounce rate on docs often means search-engine traffic landing on the wrong page, which is an SEO problem, not a content problem.",
+        "Never present this as a failure of the reader. It is not a judgement, and treating it as one leads to pointless rewrites.",
+        "Visitors are identified by a hashed IP: shared office networks merge readers into one, mobile networks split one reader across several. Report the direction of travel, not an exact count.",
+        "Bot traffic is excluded before this is computed; comparing it against raw pageview totals will not reconcile."
+      ],
+      "typical_causes": [
+        "Search traffic mismatched to the page",
+        "Bot traffic that slipped past the filter",
+        "A redirect landing readers somewhere unhelpful"
+      ],
+      "recommended_actions": [
+        {
+          "when": "rising_trend",
+          "action": "Check which pages new arrivals land on and whether the titles match what they searched for."
+        }
+      ],
+      "related_metrics": [
+        "dead_end_rate"
+      ],
+      "pairs_with": [
+        {
+          "metric": "traffic",
+          "interpretation": "A bounce spike alongside a traffic spike is usually a new inbound source landing on the wrong page — an SEO or referrer problem. Bounces rising while traffic is flat points at the entry pages themselves."
+        }
+      ],
+      "mcp_patterns": [
+        "visit_outcomes"
+      ]
+    },
+    {
+      "id": "time_to_first_value",
+      "label": "Time to first value (TTFV)",
+      "category": "activation",
+      "formula": "median(seconds from visit start to first value event)",
+      "unit": "duration",
+      "direction": "lower_is_better",
+      "accuracy": "estimate",
+      "plan": "pro",
+      "business_meaning": "How long it takes a reader to get something they can use — a copied snippet, a followed link, an answer they marked helpful.",
+      "why_it_matters": "A proxy for how quickly the product itself can be adopted. If this climbs, onboarding got harder, which shows up in trials and activation long before it shows up in churn.",
+      "benchmarks": null,
+      "confounders": [
+        "Only visits that reached value are counted, so it says nothing about readers who never got there — always read it next to the dead-end rate.",
+        "Read time arrives in segments and keeps counting in a background tab; Docsbook clips each segment, but very long sessions are still soft numbers.",
+        "Visitors are identified by a hashed IP: shared office networks merge readers into one, mobile networks split one reader across several. Report the direction of travel, not an exact count."
+      ],
+      "typical_causes": [
+        "Prerequisites buried below the fold",
+        "The first code example appears too late",
+        "Setup split across too many pages"
+      ],
+      "recommended_actions": [
+        {
+          "when": "rising_trend",
+          "action": "Move the first working example higher up the entry page."
+        }
+      ],
+      "related_metrics": [
+        "dead_end_rate",
+        "self_serve_resolution_rate"
+      ],
+      "pairs_with": [
+        {
+          "metric": "dead_end_rate",
+          "interpretation": "Fast TTFV with a low dead-end rate is a healthy funnel. Fast TTFV with a HIGH dead-end rate means the few who succeed do so quickly while most never get there — an average hiding a cliff."
+        }
+      ],
+      "mcp_patterns": [
+        "visit_outcomes"
+      ]
+    },
+    {
+      "id": "content_health_score",
+      "label": "Content health score",
+      "category": "content_quality",
+      "formula": "100 - weighted(dead_end_exits, dislikes), 0 floor; terminal success pages exempt",
+      "unit": "score",
+      "direction": "higher_is_better",
+      "accuracy": "estimate",
+      "plan": "pro",
+      "business_meaning": "One number per page saying how urgently it needs work, so the owner of a large doc set does not have to cross-reference four reports by hand.",
+      "why_it_matters": "Turns analytics into a queue. The output is a ranked list of pages, which is a work order, not a dashboard.",
+      "benchmarks": {
+        "good": 80,
+        "warning": 50,
+        "critical": 20
+      },
+      "confounders": [
+        "Pages readers leave from AFTER succeeding are exempt from the penalty. Without that exemption the score recommends rewriting the best pages in the docs — the single most damaging mistake this metric can make.",
+        "A low-traffic page can score badly on two or three events. Weigh the score against volume before acting.",
+        "Visitors are identified by a hashed IP: shared office networks merge readers into one, mobile networks split one reader across several. Report the direction of travel, not an exact count."
+      ],
+      "typical_causes": [
+        "Stale content after a release",
+        "A page answering a question nobody asks",
+        "An answer that is technically present but unusable"
+      ],
+      "recommended_actions": [
+        {
+          "when": "below_warning",
+          "action": "Rewrite from the top of the list down, checking each page's dead-end count is real volume and not two visits."
+        }
+      ],
+      "related_metrics": [
+        "dead_end_rate",
+        "exit_rate",
+        "ai_answer_rate"
+      ],
+      "pairs_with": [
+        {
+          "metric": "traffic",
+          "interpretation": "A bad score on a high-traffic page is the highest-value fix available. The same score on a page nobody reads is noise."
+        }
+      ],
+      "mcp_patterns": [
+        "content_health"
+      ]
+    },
+    {
+      "id": "search_ctr",
+      "label": "Search click-through rate",
+      "category": "findability",
+      "formula": "search_navigate / (search_open - search_no_result)",
+      "unit": "percent",
+      "direction": "higher_is_better",
+      "accuracy": "exact",
+      "plan": "pro",
+      "business_meaning": "When search returns results, how often a reader actually finds one worth opening.",
+      "why_it_matters": "Catches the gap that zero-result searches miss: search worked, results appeared, and the reader rejected all of them. That is a titling and summary problem, which is an order of magnitude cheaper to fix than writing new pages.",
+      "benchmarks": {
+        "good": 0.6,
+        "warning": 0.4,
+        "critical": 0.25
+      },
+      "confounders": [
+        "A reader who reads the answer straight from the result snippet counts as a non-click. Some 'failure' here is actually success.",
+        "Low search volume makes this extremely noisy; do not quote it for a handful of searches."
+      ],
+      "typical_causes": [
+        "Titles that do not match the words readers use",
+        "Several near-identical results",
+        "Search ranking surfacing the wrong page first"
+      ],
+      "recommended_actions": [
+        {
+          "when": "below_warning",
+          "action": "Rewrite the titles and first paragraphs of the most-searched pages — that is what the search index shows."
+        }
+      ],
+      "related_metrics": [
+        "zero_result_rate",
+        "dead_end_rate"
+      ],
+      "pairs_with": [
+        {
+          "metric": "zero_result_rate",
+          "interpretation": "Zero results = the content is missing. Low CTR with results = the content exists but does not look like the answer. Opposite fixes; conflating them wastes the author's time."
+        }
+      ],
+      "mcp_patterns": [
+        "search_effectiveness"
+      ]
+    },
+    {
+      "id": "search_position",
+      "label": "Google position",
+      "category": "findability",
+      "formula": "sum(position * impressions) / sum(impressions), over the window",
+      "unit": "score",
+      "direction": "lower_is_better",
+      "accuracy": "exact",
+      "plan": "free",
+      "business_meaning": "Where Google actually places a page for the searches people run — 1 is the top result.",
+      "why_it_matters": "This is the only number here that says whether writing more will pay off. Position 5-20 means Google already accepts the page as relevant and the text is what stands between it and the click, so a rewrite moves real traffic. Position 50+ means the page is not in the race at all, and editing wording will not change that — the work is a different page, different intent, or links. Without it an author rewrites pages that were never going to rank.",
+      "benchmarks": null,
+      "confounders": [
+        "Averaged across every impression, so one query surfacing at rank 90 drags a page that otherwise sits at 4. Read positions per query before acting, never the page average alone.",
+        "Position is measured where the page APPEARED, including for queries the page was never written for. A bad average can mean irrelevant queries, not a bad page.",
+        "Google lags roughly two days behind, and the cache refreshes at most once a day. Never present these numbers as today — quote the through-date the data carries.",
+        "The query grain undercounts volume by roughly 4x: Google withholds the queries behind most impressions, so per-query numbers are a visible subset, not the whole. Site and page totals come from the page grain and are the honest figure.",
+        "Only about 30 days of history is retained, so a year-over-year or seasonal read is impossible here."
+      ],
+      "typical_causes": [
+        "The page answers a different question than the query it surfaces for",
+        "Title and first paragraph do not use the words the query uses",
+        "A stronger competing page holds the intent"
+      ],
+      "recommended_actions": [
+        {
+          "when": "position_5_to_20",
+          "action": "Rewrite the title and opening for that exact query — this band is where editing text moves rank."
+        },
+        {
+          "when": "position_above_30",
+          "action": "Do not rewrite. Decide whether the intent deserves its own page, or drop the query."
+        }
+      ],
+      "related_metrics": [
+        "search_impressions",
+        "organic_ctr",
+        "traffic"
+      ],
+      "pairs_with": [
+        {
+          "metric": "organic_ctr",
+          "interpretation": "Good position with a low click rate is a title problem — Google shows the page and readers skip it. Bad position with a decent click rate means the few people who see it want it, so ranking work is worth more than rewriting."
+        },
+        {
+          "metric": "search_impressions",
+          "interpretation": "A great position on almost no impressions is a query nobody searches — a win worth nothing. Rank the work by impressions, not by how close position is to 1."
+        }
+      ],
+      "mcp_patterns": [
+        "search_rankings"
+      ]
+    },
+    {
+      "id": "search_impressions",
+      "label": "Search impressions",
+      "category": "findability",
+      "formula": "sum of daily impressions across the window, at the page grain",
+      "unit": "count",
+      "direction": "higher_is_better",
+      "accuracy": "exact",
+      "plan": "free",
+      "business_meaning": "How many times the docs were actually shown in Google results — the size of the audience that exists but has not arrived yet.",
+      "why_it_matters": "It is the demand signal that tells you which fix is worth doing. Every other finding in an audit is a hypothesis until you know how many people it affects; impressions turn a list of problems into a ranked queue. A page with thousands of impressions and no clicks is the cheapest traffic in the building.",
+      "benchmarks": null,
+      "confounders": [
+        "An impression is not a reader — it counts appearing in a results page, including far down where almost nobody looks. Never read it as an audience size.",
+        "Rises when Google widens the queries a page shows for, which can mean broader relevance or simply a looser match. A jump is not automatically good news.",
+        "Google lags roughly two days behind, and the cache refreshes at most once a day. Never present these numbers as today — quote the through-date the data carries.",
+        "The query grain undercounts volume by roughly 4x: Google withholds the queries behind most impressions, so per-query numbers are a visible subset, not the whole. Site and page totals come from the page grain and are the honest figure.",
+        "Only about 30 days of history is retained, so a year-over-year or seasonal read is impossible here."
+      ],
+      "typical_causes": [
+        "Google surfacing the page for a newly popular query",
+        "Seasonal or release-driven interest",
+        "Indexing changes after a site or navigation edit"
+      ],
+      "recommended_actions": [
+        {
+          "when": "high_impressions_low_clicks",
+          "action": "Rewrite the title and meta description before writing anything new — the demand already exists."
+        },
+        {
+          "when": "falling_trend",
+          "action": "Check whether the page dropped in position or lost the queries it used to surface for, before assuming a content problem."
+        }
+      ],
+      "related_metrics": [
+        "search_position",
+        "organic_ctr",
+        "traffic"
+      ],
+      "pairs_with": [
+        {
+          "metric": "organic_ctr",
+          "interpretation": "High impressions with a low click rate is the highest-value fix available: the readers are already there and the listing is losing them. High impressions with a healthy rate means the page works — leave it alone."
+        },
+        {
+          "metric": "traffic",
+          "interpretation": "Impressions are the audience Google offered; traffic is what arrived. The gap between them is what titling and positioning can still win."
+        }
+      ],
+      "mcp_patterns": [
+        "search_rankings"
+      ]
+    },
+    {
+      "id": "organic_ctr",
+      "label": "Organic click-through rate",
+      "category": "findability",
+      "formula": "clicks / impressions, over the window",
+      "unit": "percent",
+      "direction": "higher_is_better",
+      "accuracy": "exact",
+      "plan": "free",
+      "business_meaning": "Of the people Google showed the page to, the share who chose to open it.",
+      "why_it_matters": "It separates a ranking problem from a wording problem, which have completely different costs. If the page ranks and nobody clicks, the fix is a title and a description — an hour of work. Treating that as a content problem sends an author off to rewrite a page that was never the issue.",
+      "benchmarks": null,
+      "confounders": [
+        "Expected click rate falls off steeply with position — a few percent at rank 8 is normal, the same number at rank 2 is a failure. Judged against position or not at all.",
+        "AI Overviews and rich results answer the query on the results page, so clicks fall while the page is doing its job. Falling click rate alongside steady impressions is not automatically a defect.",
+        "Below a few hundred impressions a handful of clicks swings this by whole points. Say there is not enough data instead of quoting a percentage.",
+        "Google lags roughly two days behind, and the cache refreshes at most once a day. Never present these numbers as today — quote the through-date the data carries.",
+        "The query grain undercounts volume by roughly 4x: Google withholds the queries behind most impressions, so per-query numbers are a visible subset, not the whole. Site and page totals come from the page grain and are the honest figure.",
+        "Only about 30 days of history is retained, so a year-over-year or seasonal read is impossible here."
+      ],
+      "typical_causes": [
+        "Title does not use the words the query uses",
+        "No meta description, so Google composes a poor snippet",
+        "The result is answered on the search page itself"
+      ],
+      "recommended_actions": [
+        {
+          "when": "low_ctr_at_good_position",
+          "action": "Rewrite the title and meta description for the query that produces the impressions. Do not touch the body first."
+        },
+        {
+          "when": "low_ctr_at_poor_position",
+          "action": "Ignore the rate — at that position it is expected. The question is whether the page can rank at all."
+        }
+      ],
+      "related_metrics": [
+        "search_position",
+        "search_impressions",
+        "search_ctr"
+      ],
+      "pairs_with": [
+        {
+          "metric": "search_position",
+          "interpretation": "The pair that makes this metric usable: the same rate is healthy at rank 9 and alarming at rank 2. Quoting the rate without the position produces confidently wrong advice."
+        },
+        {
+          "metric": "search_ctr",
+          "interpretation": "Two different doors. This one is Google's results page; search_ctr is the site's own search box. A page can win the click on Google and still be invisible to readers already inside the docs."
+        }
+      ],
+      "mcp_patterns": [
+        "search_rankings"
+      ]
+    },
+    {
+      "id": "zero_result_rate",
+      "label": "Zero-result searches",
+      "category": "findability",
+      "formula": "count(docs.search_no_result) by query",
+      "unit": "count",
+      "direction": "lower_is_better",
+      "accuracy": "exact",
+      "plan": "pro",
+      "business_meaning": "The literal list of things readers asked for and the docs did not have — in their own words.",
+      "why_it_matters": "The cheapest content plan available. Every repeated query is a page worth writing, stated by the person who needed it, with no guessing about demand.",
+      "benchmarks": null,
+      "confounders": [
+        "Typos and one-off phrasings pad the list; group by meaning, not by exact string, before ranking.",
+        "A query can be missing because the page exists under different words — check before writing something new."
+      ],
+      "typical_causes": [
+        "Genuinely missing content",
+        "Vocabulary mismatch between the docs and the reader",
+        "A feature shipped without documentation"
+      ],
+      "recommended_actions": [
+        {
+          "when": "any",
+          "action": "Take the top repeated queries and either write the page or add a redirect from the reader's wording to the existing one."
+        }
+      ],
+      "related_metrics": [
+        "search_ctr",
+        "ai_answer_rate",
+        "dead_end_rate"
+      ],
+      "pairs_with": [
+        {
+          "metric": "ai_answer_rate",
+          "interpretation": "The strongest signal in the whole system: a topic that shows up BOTH as a zero-result search and as an unanswered AI question is confirmed independently by two different interfaces. Rank those first — a single sample can be one person's odd phrasing, two cannot."
+        }
+      ],
+      "mcp_patterns": [
+        "search_effectiveness"
+      ]
+    },
+    {
+      "id": "ai_answer_rate",
+      "label": "AI answer rate",
+      "category": "findability",
+      "formula": "answered_questions / total_ai_questions",
+      "unit": "percent",
+      "direction": "higher_is_better",
+      "accuracy": "exact",
+      "plan": "pro",
+      "business_meaning": "How often the docs assistant can answer from the content it has.",
+      "why_it_matters": "Unanswered questions are content gaps stated conversationally — often clearer than a search query, because people write assistants full sentences. No external analytics tool can see this data.",
+      "benchmarks": {
+        "good": 0.85,
+        "warning": 0.7,
+        "critical": 0.5
+      },
+      "confounders": [
+        "Questions about things the product genuinely does not do are not content gaps. Read the actual text before filing work.",
+        "An answer being produced is not the same as it being correct — read alongside satisfaction."
+      ],
+      "typical_causes": [
+        "Content missing",
+        "Content present but not indexed",
+        "The question is about a competitor or an unbuilt feature"
+      ],
+      "recommended_actions": [
+        {
+          "when": "below_warning",
+          "action": "Cluster the unanswered questions by topic and write for the largest cluster first."
+        }
+      ],
+      "related_metrics": [
+        "zero_result_rate",
+        "ai_satisfaction"
+      ],
+      "pairs_with": [
+        {
+          "metric": "zero_result_rate",
+          "interpretation": "Overlap between the two is a confirmed gap. Treat a topic present in both as higher priority than a bigger count in either alone."
+        }
+      ],
+      "mcp_patterns": [
+        "search_effectiveness"
+      ]
+    },
+    {
+      "id": "ai_satisfaction",
+      "label": "AI answer satisfaction",
+      "category": "content_quality",
+      "formula": "likes / (likes + dislikes)",
+      "unit": "percent",
+      "direction": "higher_is_better",
+      "accuracy": "exact",
+      "plan": "pro",
+      "business_meaning": "Whether readers judged the assistant's answers useful — the nearest thing to a CSAT for the docs.",
+      "why_it_matters": "The only place a reader states an opinion directly instead of leaving it to be inferred. A dislike is a stronger statement than any behavioural signal, which is why it carries the most weight in the health score.",
+      "benchmarks": {
+        "good": 0.8,
+        "warning": 0.6,
+        "critical": 0.4
+      },
+      "confounders": [
+        "Very few readers vote at all, so this is a small, self-selected sample skewed towards frustration.",
+        "A dislike can be aimed at the product rather than the docs. Read the question before concluding the page is wrong."
+      ],
+      "typical_causes": [
+        "Answer drawn from stale content",
+        "The answer is right but does not address what was actually asked"
+      ],
+      "recommended_actions": [
+        {
+          "when": "below_warning",
+          "action": "Read the disliked question and answer pairs directly — at this volume the text is worth more than the ratio."
+        }
+      ],
+      "related_metrics": [
+        "ai_answer_rate",
+        "content_health_score"
+      ],
+      "pairs_with": [
+        {
+          "metric": "dead_end_rate",
+          "interpretation": "Dislikes concentrated on pages that also produce dead ends identify the pages doing real damage, as opposed to a single annoyed reader."
+        }
+      ],
+      "mcp_patterns": [
+        "content_health"
+      ]
+    },
+    {
+      "id": "route_frequency",
+      "label": "Route frequency",
+      "category": "engagement",
+      "formula": "visits walking a given 2-4 page sequence / total visits",
+      "unit": "count",
+      "direction": "context_dependent",
+      "accuracy": "estimate",
+      "plan": "pro",
+      "business_meaning": "How many readers walk a particular sequence of pages, treating the ROUTE rather than the page as the unit.",
+      "why_it_matters": "Three pages can each look popular while nobody walks them in order — top-pages reports cannot tell an intended journey from three unrelated landings. A frequent route that ends badly is a navigation defect: the page readers need next is not the one you link to. A frequent route that ends well is the path to promote.",
+      "benchmarks": null,
+      "confounders": [
+        "Counted once per visit. Without that dedupe a reader bouncing A→B→A→B inflates the route A→B and frustration loops masquerade as popular journeys.",
+        "Immediate repeats are collapsed, so A→A→B is the route A→B; the reload itself shows up under rage signals instead.",
+        "Routes walked only once are dropped — a single visit is an anecdote, not a pattern.",
+        "Visitors are identified by a hashed IP, so a shared office network can stitch two people's browsing into one apparent route."
+      ],
+      "typical_causes": [
+        "Navigation that leads readers somewhere other than the next thing they need",
+        "A prerequisite documented after the step that requires it",
+        "Cross-links that promise more than the destination delivers"
+      ],
+      "recommended_actions": [
+        {
+          "when": "route_ends_badly",
+          "action": "Follow the route yourself and fix the transition where readers stop — usually a missing link or an unmet promise on the preceding page."
+        },
+        {
+          "when": "route_ends_well",
+          "action": "Promote this sequence in the navigation so more readers find it without hunting."
+        }
+      ],
+      "related_metrics": [
+        "dead_end_rate",
+        "funnel_completion_rate",
+        "rage_signal_rate"
+      ],
+      "pairs_with": [
+        {
+          "metric": "dead_end_rate",
+          "interpretation": "A frequent route with a high dead-end share is a navigation problem, not a page problem — each individual page may be fine while the ORDER is wrong. Rewriting the pages will not fix it."
+        }
+      ],
+      "mcp_patterns": [
+        "route_patterns",
+        "reverse_funnel"
+      ]
+    },
+    {
+      "id": "funnel_completion_rate",
+      "label": "Funnel completion rate",
+      "category": "activation",
+      "formula": "visits reaching the final declared step / visits reaching the first step",
+      "unit": "percent",
+      "direction": "higher_is_better",
+      "accuracy": "estimate",
+      "plan": "pro",
+      "business_meaning": "Of the readers who start the route you designed, the share who finish it — the onboarding completion rate of your documentation.",
+      "why_it_matters": "This is the only metric that measures the docs against the owner's OWN intent. Everything else reports what readers did; this reports whether what they did matches what you designed, and localizes the failure to a single transition you can go and look at.",
+      "benchmarks": null,
+      "confounders": [
+        "Steps must be matched IN ORDER. Counting each step independently is the classic funnel bug — it reports steps as reached by people who never walked the path.",
+        "Extra pages between declared steps are tolerated, so a reader who detours and returns still counts as continuing.",
+        "Only meaningful against a route the owner actually declared. With no configured route Docsbook reports that fact rather than inventing a funnel.",
+        "A short window can cut a visit in half, so a reader who finished the route the next day appears to have abandoned it."
+      ],
+      "typical_causes": [
+        "A step that does not link onward to the next one",
+        "A prerequisite that is harder than the page admits",
+        "A declared route that does not match how readers actually approach the product"
+      ],
+      "recommended_actions": [
+        {
+          "when": "below_warning",
+          "action": "Open the step with the worst continuation and check that the previous page links to it and promises what it delivers."
+        },
+        {
+          "when": "no_route_configured",
+          "action": "Declare the pages a new reader should pass through, or read the reverse funnel instead — it needs no hypothesis."
+        }
+      ],
+      "related_metrics": [
+        "route_frequency",
+        "dead_end_rate",
+        "time_to_first_value"
+      ],
+      "pairs_with": [
+        {
+          "metric": "route_frequency",
+          "interpretation": "If completion is low while some OTHER route is frequent and succeeds, readers have found a better path than the one you designed. Adopt theirs rather than pushing yours."
+        }
+      ],
+      "mcp_patterns": [
+        "forward_funnel"
+      ]
+    },
+    {
+      "id": "repeat_visit_retention",
+      "label": "Repeat-visit retention (W1/W4)",
+      "category": "retention",
+      "formula": "visitors active in a later week / visitors first seen in the cohort week",
+      "unit": "percent",
+      "direction": "context_dependent",
+      "accuracy": "estimate",
+      "plan": "business",
+      "business_meaning": "The share of readers who come back a week or a month after their first visit.",
+      "why_it_matters": "It is the only cohort view in the system — every other metric is a snapshot of a window. It answers whether the docs earn a place in someone's working habits, which is different from whether any single visit went well.",
+      "benchmarks": null,
+      "confounders": [
+        "THE SHAKIEST METRIC IN THE SYSTEM. visitor_id is a hashed IP: mobile networks split one reader across many ids and a corporate NAT merges many readers into one. Report it as a trend and say so; never quote it as a headcount.",
+        "A dynamic IP alone can make a loyal reader look like a new one every week, which biases retention DOWNWARD.",
+        "W4 needs a 30-day window to exist at all. On a 24h or 7d period it is structurally zero and means nothing.",
+        "Direction depends entirely on the section — see pairs_with before drawing any conclusion."
+      ],
+      "typical_causes": [
+        "Reference material readers keep at hand (high return is healthy)",
+        "Onboarding that could not be finished in one sitting (high return is a failure)",
+        "A product people use only occasionally"
+      ],
+      "recommended_actions": [
+        {
+          "when": "high_on_onboarding_section",
+          "action": "Treat repeat visits to onboarding as a warning: readers are coming back because they could not finish the first time."
+        },
+        {
+          "when": "low_on_reference_section",
+          "action": "Reference pages readers never return to are usually not findable — check search and navigation before rewriting them."
+        }
+      ],
+      "related_metrics": [
+        "dead_end_rate",
+        "time_to_first_value",
+        "self_serve_resolution_rate"
+      ],
+      "pairs_with": [
+        {
+          "metric": "time_to_first_value",
+          "interpretation": "Fast time-to-value with LOW return is success — the reader got what they needed and left. Fast with low return and no value event is failure: they gave up quickly. The two look identical until read together."
+        }
+      ],
+      "mcp_patterns": [
+        "retention"
+      ]
+    },
+    {
+      "id": "zero_click_rate",
+      "label": "Zero-click search rate",
+      "category": "findability",
+      "formula": "visits that opened search, saw results and clicked nothing / visits that searched",
+      "unit": "percent",
+      "direction": "lower_is_better",
+      "accuracy": "estimate",
+      "plan": "pro",
+      "business_meaning": "How often readers search, get a list of results, and reject every one of them.",
+      "why_it_matters": "Zero-result search reports miss this entirely: search formally worked. The reader looked at your titles and decided none of them was the answer — which points at titles and summaries, not page bodies, and is an order of magnitude cheaper to fix.",
+      "benchmarks": {
+        "good": 0.2,
+        "warning": 0.4,
+        "critical": 0.6
+      },
+      "confounders": [
+        "Searches that returned nothing are excluded from the denominator — an empty result list cannot be clicked, and counting it would blame titles for missing content.",
+        "A reader who gets the answer from the result snippet counts as a non-click, so some of this is quiet success.",
+        "Measured per visit rather than per event, because an event-level ratio mixes crawlers and partial sessions into a number owners read as human behaviour.",
+        "Very noisy at low search volume; Docsbook withholds the rate below the sample floor."
+      ],
+      "typical_causes": [
+        "Titles written in the product's vocabulary rather than the reader's",
+        "Several near-identical results with nothing to choose between them",
+        "The right page ranking below three weaker ones"
+      ],
+      "recommended_actions": [
+        {
+          "when": "above_warning",
+          "action": "Rewrite the titles and opening lines of the most-searched pages to use the words readers type — do not rewrite the bodies first."
+        }
+      ],
+      "related_metrics": [
+        "search_ctr",
+        "zero_result_rate",
+        "dead_end_rate"
+      ],
+      "pairs_with": [
+        {
+          "metric": "zero_result_rate",
+          "interpretation": "Zero results = the content is missing. Zero clicks WITH results = the content exists but does not look like the answer. Opposite fixes; conflating them wastes the author's time."
+        }
+      ],
+      "mcp_patterns": [
+        "search_zero_click"
+      ]
+    },
+    {
+      "id": "rage_signal_rate",
+      "label": "Frustration signals",
+      "category": "content_quality",
+      "formula": "count of same-page re-entries (3+), A→B→A loops and repeated searches within one visit",
+      "unit": "count",
+      "direction": "lower_is_better",
+      "accuracy": "estimate",
+      "plan": "pro",
+      "business_meaning": "Where readers circle: pages they keep coming back to within one visit, and searches they type twice because the first answer was not one.",
+      "why_it_matters": "Dead-end rate says a visit failed; this says WHERE the reader was when it went wrong. Re-entering a page means the answer should be there and is not — or is there but buried. That distinction changes the fix from writing new content to restructuring existing content.",
+      "benchmarks": null,
+      "confounders": [
+        "Session.pages is de-duplicated, so re-entries are invisible unless counted from the raw event stream. A report built on distinct pages will always show zero.",
+        "A reader who legitimately uses one page as a reference while working through another produces A→B→A without any frustration at all.",
+        "A browser reload registers as a re-entry.",
+        "Visits are reconstructed from a hashed IP, so two colleagues on one network can look like one very confused reader."
+      ],
+      "typical_causes": [
+        "An answer that exists on the page but is buried below the fold",
+        "A page that covers the topic but not the specific case readers arrive with",
+        "Two pages that each defer to the other"
+      ],
+      "recommended_actions": [
+        {
+          "when": "concentrated_on_one_page",
+          "action": "Open the page readers keep returning to and move the answer they are hunting for to the top — restructure before rewriting."
+        },
+        {
+          "when": "repeated_searches",
+          "action": "Read the repeated queries verbatim: the second phrasing is the reader telling you what the page should have been called."
+        }
+      ],
+      "related_metrics": [
+        "dead_end_rate",
+        "zero_click_rate",
+        "content_health_score"
+      ],
+      "pairs_with": [
+        {
+          "metric": "dead_end_rate",
+          "interpretation": "Frustration signals on a page whose visits still end well means readers struggle but get there — annoying, not urgent. The same signals with a high dead-end share mark the page as actively costing you readers."
+        }
+      ],
+      "mcp_patterns": [
+        "rage_signals",
+        "route_patterns"
+      ]
+    },
+    {
+      "id": "traffic",
+      "label": "Pageviews and visitors",
+      "category": "context",
+      "formula": "count(docs.pageview), dcount(visitor)",
+      "unit": "count",
+      "direction": "context_dependent",
+      "accuracy": "estimate",
+      "plan": "free",
+      "business_meaning": "How many people arrived. That is all it says.",
+      "why_it_matters": "Context for every other metric — it decides which problems are worth fixing first — but it is never itself a verdict. Every competitor reports this; it is not why anyone buys a docs platform.",
+      "benchmarks": null,
+      "confounders": [
+        "Crawler traffic can be the overwhelming majority of raw pageviews (96% on some Docsbook workspaces). Behavioural metrics exclude bots; traffic counts do not. Never compare the two totals directly.",
+        "Rising traffic with a rising dead-end rate is a worsening situation, not a win."
+      ],
+      "typical_causes": [
+        "A release",
+        "A link from a popular site",
+        "Search ranking movement",
+        "A crawler sweep"
+      ],
+      "recommended_actions": [
+        {
+          "when": "any",
+          "action": "Use it to weight the fix queue, not to judge whether the docs are working."
+        }
+      ],
+      "related_metrics": [
+        "dead_end_rate",
+        "content_health_score"
+      ],
+      "pairs_with": [
+        {
+          "metric": "dead_end_rate",
+          "interpretation": "The framing that sells the product: traffic says how many arrived, dead-end rate says how many left with nothing. Reporting the first without the second is the mistake every generic analytics tool makes."
+        }
+      ],
+      "mcp_patterns": [
+        "traffic_overview"
+      ]
+    },
+    {
+      "id": "visit_evidence",
+      "label": "Individual visits",
+      "category": "context",
+      "formula": "one row per reconstructed visit: ordered pages, read time, outcome, exit page",
+      "unit": "count",
+      "direction": "context_dependent",
+      "accuracy": "estimate",
+      "plan": "pro_plus",
+      "business_meaning": "The actual journeys behind the rates — what one reader did, in order, before they left.",
+      "why_it_matters": "Rates say how much; only a journey says what happened. This is what answers 'show me someone who gave up' and what turns a support complaint into a reproducible path. It is also the evidence an owner needs before believing any aggregate on this list.",
+      "benchmarks": null,
+      "confounders": [
+        "A visit is reconstructed from events, not tracked with a session cookie: a 30-minute gap starts a new one, so a reader who returns after lunch appears twice.",
+        "Visitors are identified by a hashed IP: shared office networks merge readers into one, mobile networks split one reader across several. Report the direction of travel, not an exact count.",
+        "Bot visits are flagged and excluded from every rate, but a crawler that mimics a browser can still appear here — check whether the journey looks human before drawing conclusions."
+      ],
+      "typical_causes": [],
+      "recommended_actions": [
+        {
+          "when": "investigating_a_complaint",
+          "action": "Filter to the affected page and read the journeys that end on it — the step before the exit is usually the real problem."
+        }
+      ],
+      "related_metrics": [
+        "dead_end_rate",
+        "exit_rate"
+      ],
+      "pairs_with": [
+        {
+          "metric": "dead_end_rate",
+          "interpretation": "Read a handful of dead-end journeys before acting on the rate. The rate says how many; the journeys say whether they were all failing for the same reason or for five different ones — which decides whether this is one fix or five."
+        }
+      ],
+      "mcp_patterns": [
+        "visits"
+      ]
+    }
+  ]
+}

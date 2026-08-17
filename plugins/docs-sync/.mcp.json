@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "docsbook": {
-      "type": "http",
-      "url": "https://docsbook.io/api/mcp/server"
-    }
-  }
-}

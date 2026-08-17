@@ -1,5 +1,6 @@
 {
   "name": "docs-claude-plugins",
+  "description": "Docsbook's documentation toolkit for Claude Code — one plugin carrying the full docs-skills catalog, the orchestration commands, the pinned subagents and the Docsbook MCP server.",
   "owner": {
     "name": "Docsbook",
     "email": "dan@docsbook.io",
@@ -7,138 +8,15 @@
   },
   "plugins": [
     {
-      "name": "docs-sync",
-      "source": "./plugins/docs-sync",
-      "description": "Pre-push code↔docs drift detection. Fans out Haiku searchers per code cluster, Sonnet editors per drifted page, then a Sonnet curator merges everything atomically into your push.",
-      "version": "0.1.0",
+      "name": "docsbook",
+      "source": "./plugins/docsbook",
+      "description": "Everything Docsbook does inside Claude Code: pre-push code↔docs drift detection, docs bootstrap from a URL or from scratch, a read-only quality audit, a recurring analytics pipeline, growth reasoning, and the full docs-skills catalog — over the Docsbook MCP server.",
+      "version": "1.0.0",
       "author": {
         "name": "Dan Bondarev",
         "url": "https://github.com/Docsbook-io"
       },
-      "keywords": [
-        "docs",
-        "drift",
-        "pre-push",
-        "subagents",
-        "haiku",
-        "sonnet",
-        "markdown",
-        "mcp"
-      ],
-      "license": "MIT"
-    },
-    {
-      "name": "docs-create",
-      "source": "./plugins/docs-create",
-      "description": "End-to-end docs bootstrap: crawl a product URL with Haiku — or, when no source exists, research competitors and generate docs from a topic with Sonnet. Enrich with marketing pages (competitor vs, learn/, glossary, use-cases, migration guides), publish to GitHub, configure the Docsbook workspace via MCP. Unified positioning questions (problem + differentiator) across every route shape the README, AI chat prompt, and SEO meta. Guaranteed branding fallback chain in every crawler — no more colorless workspaces. One /docs-create command, five pinned subagents, two MCP servers (markdown-lsp + docsbook). Reads and writes Claude memory across runs so future sessions reuse the user's project context, competitor research, and style preferences.",
-      "version": "0.4.1",
-      "author": {
-        "name": "Dan Bondarev",
-        "url": "https://github.com/Docsbook-io"
-      },
-      "keywords": [
-        "docs",
-        "crawl",
-        "publish",
-        "github",
-        "docsbook",
-        "subagents",
-        "haiku",
-        "sonnet",
-        "markdown",
-        "mcp",
-        "enrichment",
-        "competitor",
-        "seo",
-        "research",
-        "from-scratch",
-        "memory"
-      ],
-      "license": "MIT"
-    },
-    {
-      "name": "docs-insights",
-      "source": "./plugins/docs-insights",
-      "description": "Recurring analytics pipeline over the Docsbook MCP. Four pinned subagents (collector → clusterer → reporter → archivist) produce schema-validated JSON insight reports under .docsbook/insights/ on a configurable schedule. Designed so downstream actor agents can consume the JSON to drive Issues, edits, AI-chat tuning.",
-      "version": "0.1.0",
-      "author": {
-        "name": "Dan Bondarev",
-        "url": "https://github.com/Docsbook-io"
-      },
-      "keywords": [
-        "docs",
-        "analytics",
-        "observability",
-        "insights",
-        "utm",
-        "engagement",
-        "funnel",
-        "ai-chat",
-        "subagents",
-        "haiku",
-        "sonnet",
-        "mcp",
-        "schedule",
-        "automation",
-        "docsbook"
-      ],
-      "license": "MIT"
-    },
-    {
-      "name": "docs-audit",
-      "source": "./plugins/docs-audit",
-      "description": "Full documentation quality audit, read-only. One pinned Sonnet auditor runs any of 17 checks — content types, structure, style, audience, navigation, SEO, accessibility, i18n, media, maintenance, trust, pricing consistency, competitor gap, rank recovery, title rewriting, content gaps, AI retrieval — and returns machine-readable JSON findings. Never edits a doc page; that is docs-sync's or docs-create's job.",
-      "version": "0.1.0",
-      "author": {
-        "name": "Dan Bondarev",
-        "url": "https://github.com/Docsbook-io"
-      },
-      "keywords": [
-        "docs",
-        "audit",
-        "quality",
-        "accessibility",
-        "seo",
-        "style",
-        "i18n",
-        "diataxis",
-        "ai-retrieval",
-        "geo",
-        "aeo",
-        "subagents",
-        "sonnet",
-        "mcp",
-        "docsbook"
-      ],
-      "license": "MIT"
-    },
-    {
-      "name": "docs-growth",
-      "source": "./plugins/docs-growth",
-      "description": "Growth-reasoning pipeline over a product source-of-truth. Three pinned subagents (segment-analyst, funnel-analyst, competitor-analyst) reason about who buys, how they enter, and who competes — grounded in real analytics via docs-insights where data exists, simulated only where it cannot — and append what they learn back into the private knowledge base (about/, product-marketing context). Proposes and enriches; never touches product code or client docs. Emits schema-validated JSON for downstream opportunity-mapping or experiment-planning agents.",
-      "version": "0.2.0",
-      "author": {
-        "name": "Dan Bondarev",
-        "url": "https://github.com/Docsbook-io"
-      },
-      "keywords": [
-        "docs",
-        "growth",
-        "icp",
-        "segments",
-        "persona",
-        "jtbd",
-        "funnel",
-        "entry-points",
-        "competitors",
-        "source-of-truth",
-        "distribution",
-        "subagents",
-        "haiku",
-        "sonnet",
-        "mcp",
-        "docsbook"
-      ],
+      "keywords": ["docs", "documentation", "drift", "sync", "audit", "seo", "accessibility", "i18n", "analytics", "insights", "growth", "mcp", "subagents", "skills", "docsbook"],
       "license": "MIT"
     }
   ]
