@@ -28,14 +28,20 @@ Honor argument overrides:
 
 For each enabled analyzer, invoke the matching skill. The skills themselves orchestrate the 4-stage subagent pipeline (collector → clusterer → reporter → archivist). The mapping:
 
-| Analyzer name | Skill to invoke |
-|---|---|
-| `docs-utm-analyzer` | docs-skills `docs-utm-analyzer` |
-| `docs-engagement-analyzer` | docs-skills `docs-engagement-analyzer` |
-| `docs-funnel-mapper` | docs-skills `docs-funnel-mapper` |
-| `docs-visitor-cohort` | docs-skills `docs-visitor-cohort` |
-| `docs-link-click-analyzer` | docs-skills `docs-link-click-analyzer` |
-| `docs-question-clusterer` | docs-skills `docs-question-clusterer` |
+The analyzer names below are this plugin's own identifiers — they are written into
+`.docsbook/insights/.config.json` and used as report basenames, so they do not change.
+Each one names a pass of one docs-skills orchestrator, not a skill of its own: upstream
+collapsed the 52-skill catalog these were originally 1:1 with into four orchestrators, and
+the pass is where the rules for that analyzer now live.
+
+| Analyzer name | Skill to invoke | Pass to follow |
+|---|---|---|
+| `docs-utm-analyzer` | docs-skills `docs-analyze` | `references/signals.md` §Campaign traffic |
+| `docs-engagement-analyzer` | docs-skills `docs-analyze` | `references/signals.md` §Engagement |
+| `docs-funnel-mapper` | docs-skills `docs-analyze` | `references/signals.md` §Routes and funnels |
+| `docs-visitor-cohort` | docs-skills `docs-analyze` | `references/signals.md` §Reader cohorts |
+| `docs-link-click-analyzer` | docs-skills `docs-analyze` | `references/signals.md` §Actions and links |
+| `docs-question-clusterer` | docs-skills `docs-analyze` | `references/signals.md` §Question clusters |
 
 **Run analyzers sequentially**, not in parallel. Three reasons:
 

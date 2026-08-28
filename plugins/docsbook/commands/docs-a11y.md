@@ -2,11 +2,12 @@
 description: Run only the accessibility check — alt text, heading order, link text, contrast, and other a11y issues in doc pages.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 argument-hint: [path-or-full] [--workspace <id>]
+skill: docs-analyze
 ---
 
 # /docs-a11y — quick shortcut
 
-Shortcut for `/docsbook:run-docs-analyze --only accessibility`. See the underlying skill at [docs-accessibility](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-accessibility/SKILL.md).
+Shortcut for `/docsbook:run-docs-analyze --only accessibility`. See the underlying skill at [docs-analyze — accessibility detector](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/detectors.md).
 
 Named `/docs-a11y` (the standard shorthand for "accessibility") rather than `/docs-accessibility` to avoid colliding with the existing global `docs-accessibility` skill name.
 

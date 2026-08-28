@@ -1,6 +1,7 @@
 ---
 description: Configure a Docsbook workspace via MCP — branding, UI, AI, SEO, languages
 allowed-tools: Agent, Read
+skill: docs-manage
 ---
 
 # /docsbook:run-docs-setup-workspace — configure Docsbook workspace via MCP
@@ -41,4 +42,4 @@ Plan-gated (upgrade to enable): <planGated>
 
 - `{"status":"mcp_unavailable","instructions":[...]}` → print instructions verbatim. Most common cause: Docsbook MCP not authenticated yet.
 - `{"status":"error","reason":"workspace_not_found","retryAfterSeconds":60}` → tell the user Docsbook is still indexing the repo and to retry in a minute.
-- Tips and rationale (UI preset, MCP probe order, Free vs PRO gating) live in the [`docs-setup-workspace` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-setup-workspace/SKILL.md).
+- Tips and rationale (UI preset, MCP probe order, Free vs PRO gating) live in the [`docs-setup-workspace` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-manage/references/site-config.md).

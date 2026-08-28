@@ -1,6 +1,7 @@
 ---
 description: Push a local docs folder to a new public GitHub repository
 allowed-tools: Agent, Read, Bash
+skill: docs-create
 ---
 
 # /docsbook:run-docs-publish — push local docs folder to GitHub
@@ -47,4 +48,4 @@ Next: /docsbook:run-docs-setup-workspace <owner>/<repo>
 - `{"status":"error","reason":"repo_exists"}` → ask for a different repo name.
 - `{"status":"error","reason":"gh_missing"}` → print `manualSteps` from the response.
 - `{"status":"error","reason":"push_failed"}` → surface `detail` to the user; do NOT silently fall back to SSH.
-- Tips and rationale (HTTPS vs SSH, `gh repo create --source` pitfalls) live in the [`docs-publish` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-publish/SKILL.md).
+- Tips and rationale (HTTPS vs SSH, `gh repo create --source` pitfalls) live in the [`docs-publish` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-create/references/publish.md).

@@ -2,11 +2,12 @@
 description: Run only docs-utm-analyzer — UTM ↔ landing-page mismatch detection (PRO+).
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, mcp__plugin_docsbook_docsbook__get_workspace, mcp__plugin_docsbook_docsbook__list_workspaces, mcp__plugin_docsbook_docsbook__get_analytics, mcp__plugin_docsbook_docsbook__query_events
 argument-hint: [optional: --workspace <id>] [--period 30d]
+skill: docs-analyze
 ---
 
 # /docs-utm — quick shortcut
 
-Shortcut for `/docs-insights --only docs-utm-analyzer`. See the underlying skill at [docs-utm-analyzer](https://github.com/Docsbook-io/docs-skills/blob/main/skills/observability/docs-utm-analyzer/SKILL.md).
+Shortcut for `/docs-insights --only docs-utm-analyzer`. See the underlying skill at [docs-analyze — campaign-traffic pass](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/signals.md).
 
 ## Workflow
 

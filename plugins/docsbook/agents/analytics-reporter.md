@@ -22,6 +22,12 @@ SKILL:     <docs-utm-analyzer | docs-engagement-analyzer | docs-funnel-mapper | 
 SKILL_VERSION: <semver, e.g. 1.0.0>
 ```
 
+> `docs-utm-analyzer` and its five siblings are this plugin's **analyzer identifiers**, not
+> docs-skills skill names. They are persisted in users' `.docsbook/insights/.config.json` and
+> used as report basenames, so they are frozen; upstream's 52-skill catalog that once shared
+> these names has since collapsed into four orchestrators. The analyzer → skill mapping lives
+> in `/docs-insights`.
+
 ## Workflow
 
 1. **Read CLUSTERED and SCHEMA.** Validate that the slice in the clusterer output matches SKILL (use the [skill→slice map](#skill-to-slice-map)). Fail if not.
@@ -62,8 +68,8 @@ For each cluster in the input, map to a Finding:
 | `engagement` | `engagement_problem` if `neg_feedback_count > 0`, else `engagement_signal` | `high` if dwell > 2× median AND neg_feedback > 0; `medium` for one-sided signals; `info` for `engagement_signal` | For problem: `invoke_skill:docs-editor`. For signal: `add_to_todo` (consider expanding successful page) |
 | `funnel` | `conversion_problem` if completion_rate < 0.2; `broken_journey` if a high-traffic transition is missing | `critical` if completion_rate < 0.1 AND sessions ≥ 100; `high` if < 0.2; `medium` otherwise | `open_github_issue` with the broken transition; `edit_page` on the drop page |
 | `cohort` | `cohort_pattern` | `high` if cohort hits pricing/billing then drops; `medium` for tire-kicker patterns; `info` for deep-reader (positive) patterns | `add_to_todo` for product/marketing review; `notify_slack` if blocker cohort exceeds 30% of top visitors |
-| `link_clicks` | `cta_underperformance` if ctr < 0.5× site median AND impressions ≥ 200; `orphan_traffic` if page has pageviews but zero internal-link clicks in | `high` if conversion-page CTA (Upgrade/Sign up); `medium` otherwise | `edit_page` on source page (CTA label/placement); `invoke_skill:docs-link-click-analyzer` to re-check after change |
-| `questions` | `content_gap` if `coverage_score < 0.3` AND question_count ≥ 5; `ai_chat_failure` if cluster has unanswered ≥ 50% AND coverage_score ≥ 0.5 (doc exists but chat fails) | `high` for content_gap with ≥ 20 questions; `medium` otherwise | For content_gap: `invoke_skill:docs-create` with draft outline. For ai_chat_failure: `invoke_skill:docs-tune-ai-chat` |
+| `link_clicks` | `cta_underperformance` if ctr < 0.5× site median AND impressions ≥ 200; `orphan_traffic` if page has pageviews but zero internal-link clicks in | `high` if conversion-page CTA (Upgrade/Sign up); `medium` otherwise | `edit_page` on source page (CTA label/placement); `invoke_skill:docs-analyze` (actions-and-links pass) to re-check after change |
+| `questions` | `content_gap` if `coverage_score < 0.3` AND question_count ≥ 5; `ai_chat_failure` if cluster has unanswered ≥ 50% AND coverage_score ≥ 0.5 (doc exists but chat fails) | `high` for content_gap with ≥ 20 questions; `medium` otherwise | For content_gap: `invoke_skill:docs-create` with draft outline. For ai_chat_failure: `invoke_skill:docs-manage` (site-configuration catalog — assistant) |
 
 For `global_anomalies` from the clusterer:
 
@@ -72,7 +78,7 @@ For `global_anomalies` from the clusterer:
 | `traffic_spike` | `traffic_anomaly` | `info` | `notify_slack` + `add_to_todo` ("explore why") |
 | `traffic_drop` | `traffic_anomaly` | `high` | `open_github_issue` ("traffic regression on X — investigate") |
 | `engagement_collapse` | `engagement_problem` | `critical` | `invoke_skill:docs-editor` |
-| `ai_failure_rate_high` | `ai_chat_failure` | `high` | `invoke_skill:docs-tune-ai-chat` |
+| `ai_failure_rate_high` | `ai_chat_failure` | `high` | `invoke_skill:docs-manage` (site-configuration catalog — assistant) |
 
 ### Finding id construction
 

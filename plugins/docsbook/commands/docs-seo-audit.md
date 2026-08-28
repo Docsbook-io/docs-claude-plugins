@@ -2,11 +2,12 @@
 description: Run only the seo check — titles, meta descriptions, heading structure, and real search positions where a workspace is connected.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, mcp__plugin_docsbook_docsbook__get_workspace, mcp__plugin_docsbook_docsbook__list_workspaces, mcp__plugin_docsbook_docsbook__get_search_rankings
 argument-hint: [path-or-full] [--workspace <id>]
+skill: docs-analyze
 ---
 
 # /docs-seo-audit — quick shortcut
 
-Shortcut for `/docsbook:run-docs-analyze --only seo`. See the underlying skill at [docs-seo](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-seo/SKILL.md).
+Shortcut for `/docsbook:run-docs-analyze --only seo`. See the underlying skill at [docs-analyze — search-signal pass](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/signals.md).
 
 Named `/docs-seo-audit` (with the `-audit` suffix) to avoid colliding with the existing global `docs-seo` skill name, consistent with `/docs-media-audit` above. Falls back to a text-only audit without a connected workspace — real search positions require `get_search_rankings`.
 

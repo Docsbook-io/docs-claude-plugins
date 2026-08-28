@@ -22,11 +22,23 @@ jobs:
       # The gate that makes a stale skills catalog impossible to merge: re-run
       # the sync against the pinned upstream and fail if the committed tree
       # differs by a byte. A bot PR would only be a notification; this is a wall.
-      - name: Skills match the pinned docs-skills release
+      #
+      # It is only half the guarantee, though — a pin nobody advances matches
+      # itself forever, which is how this repo shipped a 52-skill catalog for
+      # eleven days after upstream replaced it with 4. The other half is
+      # .github/workflows/sync-upstream.yml, which moves the pin hourly.
+      - name: Skills match the pinned docs-skills commit
         run: node scripts/sync-skills.mjs --check
 
       # Versions, MCP tool names and namespaces, command/skill collisions,
-      # metric_dictionary paths. See the header of the script for why each check
-      # exists — every one of them was a real defect in this repo.
+      # metric_dictionary paths, and every skill or reference file a command
+      # names. See the header of the script for why each check exists — every
+      # one of them was a real defect in this repo.
+      #
+      # scripts/mcp-tools.json is deliberately NOT re-fetched here: that check
+      # needs a live call to docsbook.io, and a deploy in progress would turn
+      # every open pull request red for a reason that has nothing to do with the
+      # pull request. It runs in the scheduled sync instead, where a stale list
+      # is a commit and an outage is a retry an hour later.
       - name: Plugin guardrails
         run: node scripts/check-plugin.mjs

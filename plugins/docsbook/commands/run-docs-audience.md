@@ -2,11 +2,12 @@
 description: Run only the audience check — is each page pitched at the reader it actually gets (skill level, role, prior knowledge assumed).
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 argument-hint: [path-or-full] [--workspace <id>]
+skill: docs-analyze
 ---
 
 # /docsbook:run-docs-audience — quick shortcut
 
-Shortcut for `/docsbook:run-docs-analyze --only audience`. See the underlying skill at [docs-audience](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-audience/SKILL.md).
+Shortcut for `/docsbook:run-docs-analyze --only audience`. See the underlying skill at [docs-analyze — audience-fit detector](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/detectors.md).
 
 ## Workflow
 

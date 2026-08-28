@@ -2,11 +2,12 @@
 description: Run only the structure-templates check — heading hierarchy, section order, and template conformance per page.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 argument-hint: [path-or-full] [--workspace <id>]
+skill: docs-analyze
 ---
 
 # /docsbook:run-docs-structure-templates — quick shortcut
 
-Shortcut for `/docsbook:run-docs-analyze --only structure-templates`. See the underlying skill at [docs-structure-templates](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-structure-templates/SKILL.md).
+Shortcut for `/docsbook:run-docs-analyze --only structure-templates`. See the underlying skill at [docs-analyze — structure detector](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/detectors.md).
 
 ## Workflow
 

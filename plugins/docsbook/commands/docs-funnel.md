@@ -2,11 +2,12 @@
 description: Run only docs-funnel-mapper — multi-step journey drop-off detection (PRO+).
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, mcp__plugin_docsbook_docsbook__get_workspace, mcp__plugin_docsbook_docsbook__list_workspaces, mcp__plugin_docsbook_docsbook__get_page_journeys, mcp__plugin_docsbook_docsbook__get_analytics
 argument-hint: [optional: --workspace <id>] [--period 30d]
+skill: docs-analyze
 ---
 
 # /docs-funnel — quick shortcut
 
-Shortcut for `/docs-insights --only docs-funnel-mapper`. See the underlying skill at [docs-funnel-mapper](https://github.com/Docsbook-io/docs-skills/blob/main/skills/observability/docs-funnel-mapper/SKILL.md).
+Shortcut for `/docs-insights --only docs-funnel-mapper`. See the underlying skill at [docs-analyze — routes-and-funnels pass](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/signals.md).
 
 ## Workflow
 

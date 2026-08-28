@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-08-01",
+  "updated": "2026-08-28",
   "about": "Where metrics come from. Every value in a metric's `mcp_patterns` must appear here, so a metric cannot claim a source that has no way of being read. Mirrored by hand rather than imported: CI for this catalog checks out this repository alone, so a source list living in the product would make the guard green here and wrong in CI.",
   "sources": [
     {
@@ -73,6 +73,36 @@
       "kind": "platform_source",
       "reported_by": "get_search_rankings",
       "note": "Google Search Console, pulled and cached by the platform. There is no analytics pattern behind it — the numbers are Google's, not Docsbook's own event stream, which is why its freshness and grain caveats differ from every other source here."
+    },
+    {
+      "id": "goal_definitions",
+      "kind": "platform_source",
+      "reported_by": "list_goals",
+      "note": "The goals and funnels DECLARED for the workspace, and what each one matches — not how they performed. Free on every plan: declaring measurement is not the paid part, reading the results is. Read it before judging any goal number, because a goal that matches nothing is indistinguishable from a goal nobody completes."
+    },
+    {
+      "id": "goals",
+      "kind": "platform_source",
+      "reported_by": "get_goals",
+      "note": "Completions per declared goal over the window, plus the daily series. Counted per VISIT, not per event — a section goal fires repeatedly for one reader, and counting events would report one person as five conversions. Served from the goal store rather than an analytics pattern."
+    },
+    {
+      "id": "declared_funnel",
+      "kind": "platform_source",
+      "reported_by": "get_funnel",
+      "note": "Step-by-step completion of a funnel built from declared goals, with the worst TRANSITION named rather than the smallest step. Distinct from `forward_funnel`, which reads the single page route stored on the workspace: this one composes goals of any kind — sections, events and outbound clicks — so the route can end on a business outcome instead of a pageview."
+    },
+    {
+      "id": "goal_journeys",
+      "kind": "platform_source",
+      "reported_by": "get_goal_journeys",
+      "note": "Everyone who completed one goal, with time from first seen to converting, quoted as median and p90 and never as a mean — time-to-convert on a docs site is bimodal and the mean lands in the empty valley between the two modes. The source shown is LAST TOUCH and over-credits Direct; it is a hint, not attribution."
+    },
+    {
+      "id": "goal_visitors",
+      "kind": "platform_source",
+      "reported_by": "get_goal_visitors",
+      "note": "Visitors in the window with the goals each one completed. Read it, do not count it: a visitor is a hashed IP, so corporate NAT merges several readers into one row and a mobile network splits one across many."
     }
   ]
 }

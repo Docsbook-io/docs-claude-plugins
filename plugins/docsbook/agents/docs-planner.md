@@ -1,6 +1,6 @@
 ---
 name: docs-planner
-description: Clusters a docs-sync run into 1–5 thematic groups for parallel docs-drift analysis. Accepts either a code diff (diff mode) or a free-text user intent (intent mode). Use first when the orchestrator hands you input.
+description: Clusters a `/docsbook:run-docs-sync` run into 1–5 thematic groups for parallel docs-drift analysis. Accepts either a code diff (diff mode) or a free-text user intent (intent mode). Use first when the orchestrator hands you input.
 model: haiku
 tools: Read, Grep, Glob
 ---

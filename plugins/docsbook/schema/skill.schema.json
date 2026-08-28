@@ -41,23 +41,21 @@
           "type": "string",
           "description": "High-level taxonomy bucket.",
           "enum": [
-            "analysis",
             "creation",
-            "publishing",
-            "automation",
-            "observability",
-            "growth",
-            "planning"
+            "analysis",
+            "management",
+            "automation"
           ]
         },
         "mode": {
           "type": "string",
-          "description": "What the skill is allowed to do to the docs. `audit` reports and changes nothing. `refactor` rewrites existing pages, preserving meaning, and never creates new ones. `authoring` is a rule set loaded BEFORE new writing, and never repairs old pages. `platform` configures the workspace itself rather than the content. The three content modes are mutually exclusive on purpose: a skill that both audits and rewrites cannot be trusted to do either.",
+          "description": "What the skill is allowed to do to the docs. `audit` reports and changes nothing. `refactor` rewrites existing pages, preserving meaning, and never creates new ones. `authoring` is a rule set loaded BEFORE new writing, and never repairs old pages. `platform` configures the workspace itself rather than the content. Those four stay mutually exclusive on purpose: a skill that both audits and rewrites cannot be trusted to do either. `orchestrator` is the one composite: a top-level skill that runs phases which each declare a single mode of their own, and may cross from audit into refactor only through an explicit apply gate the user answers. An orchestrator that rewrites inside its audit phase breaks the same trust the exclusivity protects.",
           "enum": [
             "audit",
             "refactor",
             "authoring",
-            "platform"
+            "platform",
+            "orchestrator"
           ]
         },
         "requires_docsbook_mcp": {

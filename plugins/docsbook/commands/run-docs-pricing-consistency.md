@@ -2,11 +2,12 @@
 description: Run only the pricing-consistency check — prices, plan names, and limits in the docs checked against the live pricing page.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, WebFetch
 argument-hint: [path-or-full] [--workspace <id>]
+skill: docs-analyze
 ---
 
 # /docsbook:run-docs-pricing-consistency — quick shortcut
 
-Shortcut for `/docsbook:run-docs-analyze --only pricing-consistency`. See the underlying skill at [docs-pricing-consistency](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-pricing-consistency/SKILL.md).
+Shortcut for `/docsbook:run-docs-analyze --only pricing-consistency`. See the underlying skill at [docs-analyze — live-pricing check](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/external-checks.md).
 
 ## Workflow
 

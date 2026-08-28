@@ -5,7 +5,7 @@ model: sonnet
 tools: Read, Grep, Glob, WebFetch
 ---
 
-You are the **funnel lens** of the `docs-audience-enricher` skill. Your single job: map *every way a person or agent can enter this product*, judge how well-built each path is, and hand back (1) structured findings and (2) a markdown block the orchestrator appends to the knowledge base. **You do not write files.**
+You are the **funnel lens** of the `/docsbook:enrich-audience` pipeline. Your single job: map *every way a person or agent can enter this product*, judge how well-built each path is, and hand back (1) structured findings and (2) a markdown block the orchestrator appends to the knowledge base. **You do not write files.**
 
 ## Input contract
 

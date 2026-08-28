@@ -1,7 +1,7 @@
 {
   "$schema": "../schema/metric.schema.json",
-  "version": "1.2.0",
-  "updated": "2026-08-01",
+  "version": "1.3.0",
+  "updated": "2026-08-28",
   "about": "What each Docsbook metric MEANS for the business — not what it counts. An agent reading a number should be able to say what to do about it, what would make it lie, and which other metric has to be read alongside it before drawing a conclusion. `pairs_with` is the important part: most single metrics are ambiguous, and the ambiguity is what makes an agent give confidently wrong advice.",
   "metrics": [
     {
@@ -670,6 +670,77 @@
       ]
     },
     {
+      "id": "goal_completion_rate",
+      "label": "Goal completion rate",
+      "category": "activation",
+      "formula": "visits that completed the goal / visits in the period, counted once per visit",
+      "unit": "percent",
+      "direction": "context_dependent",
+      "accuracy": "estimate",
+      "plan": "pro",
+      "business_meaning": "The share of readers who did one specific thing the owner declared they wanted them to do.",
+      "why_it_matters": "A goal is the only place the owner states what the docs are FOR. Everything else in the dictionary reports what readers did; this reports whether they did the declared thing, which is what turns \"we get traffic\" into \"of the people who came, this many got as far as the price\". It is also the unit funnels are built from, so a goal that is defined badly makes every funnel containing it wrong in the same way.",
+      "benchmarks": null,
+      "confounders": [
+        "Counted per VISIT, not per event. A section goal fires several times for one reader, and counting events would report one person as five conversions.",
+        "A goal that can never fire looks EXACTLY like a goal with 100% drop-off. Zero completions is first a question about the matcher — a section anchor that exists on no page, an outbound host nobody links to — and only then a question about reader behaviour.",
+        "Matched retroactively against history already recorded, so a goal created today has a full chart immediately. That chart covers a period during which nobody was optimising for it, which is a baseline, not a verdict.",
+        "Editing a goal mid-window makes the series two different measurements drawn as one line. The change has to be noted and the comparison restarted after it.",
+        "There is no industry benchmark for a docs goal. The only valid comparison is this goal against itself last period; any external figure being quoted is an ecommerce number.",
+        "A declared value of null means nobody said what a completion is worth — it is not zero. Money derived from a null-valued goal is invented, not measured.",
+        "A micro goal rising while the macro goal falls is not partial success. It usually means the micro-conversion got easier to reach, not that the site got better at selling."
+      ],
+      "typical_causes": [
+        "The section, event or destination the goal matches is not reachable from the pages readers actually land on",
+        "The goal describes what the owner wishes readers did rather than a step on the route they take",
+        "The behaviour is real but the matcher is scoped too narrowly — one page, when readers do it on five"
+      ],
+      "recommended_actions": [
+        {
+          "when": "zero_completions",
+          "action": "Check the matcher before concluding anything about readers: walk the route once as a reader and confirm the anchor, event or destination the goal names actually occurs."
+        },
+        {
+          "when": "micro_goal_rising_macro_flat",
+          "action": "Stop optimising the micro-conversion. The step after it is where the route breaks — read the funnel transition rather than the goal totals."
+        },
+        {
+          "when": "below_warning",
+          "action": "Read the funnel this goal sits in before rewriting anything: a goal is a point, and only the transition into it says whether the problem is this page or the one before it."
+        }
+      ],
+      "related_metrics": [
+        "funnel_completion_rate",
+        "dead_end_rate",
+        "time_to_first_value",
+        "traffic"
+      ],
+      "pairs_with": [
+        {
+          "metric": "funnel_completion_rate",
+          "interpretation": "A goal total says how often something happened; the funnel says at which transition people were lost on the way to it. A healthy goal total inside a collapsing funnel means most completions arrive by a route the owner never declared — which is a navigation finding, not a content one."
+        },
+        {
+          "metric": "dead_end_rate",
+          "interpretation": "A rising macro goal alongside a rising dead-end rate means the docs are converting the readers who already knew what they wanted and failing everyone else. Averaged together they cancel out and the site looks unchanged."
+        },
+        {
+          "metric": "traffic",
+          "interpretation": "Completions falling while traffic rises is a mix change, not a quality drop: a new source is sending readers with a different intent. Judge the RATE, and check where the new traffic enters before touching any page."
+        },
+        {
+          "metric": "time_to_first_value",
+          "interpretation": "A goal completed with a long median time-to-convert is an evaluation, not an activation. It needs a way for the reader to be remembered across sessions; rewriting the page they converted on will not shorten a decision made over days."
+        }
+      ],
+      "mcp_patterns": [
+        "goals",
+        "goal_definitions",
+        "goal_journeys",
+        "goal_visitors"
+      ]
+    },
+    {
       "id": "funnel_completion_rate",
       "label": "Funnel completion rate",
       "category": "activation",
@@ -685,7 +756,10 @@
         "Steps must be matched IN ORDER. Counting each step independently is the classic funnel bug — it reports steps as reached by people who never walked the path.",
         "Extra pages between declared steps are tolerated, so a reader who detours and returns still counts as continuing.",
         "Only meaningful against a route the owner actually declared. With no configured route Docsbook reports that fact rather than inventing a funnel.",
-        "A short window can cut a visit in half, so a reader who finished the route the next day appears to have abandoned it."
+        "A short window can cut a visit in half, so a reader who finished the route the next day appears to have abandoned it.",
+        "A funnel is a hypothesis about a path, and most readers are not on it. The share of all visits that enter step 1 is itself a number worth quoting — a funnel describing 4% of traffic cannot carry a site-wide conclusion.",
+        "A funnel edited mid-window is two different funnels. Reordering steps must change the numbers; if it does not, something is counting events instead of ordered visits.",
+        "A step whose goal matches nothing reports as total collapse at that step, permanently. Verify each step fires at all before reading the transitions."
       ],
       "typical_causes": [
         "A step that does not link onward to the next one",
@@ -699,10 +773,11 @@
         },
         {
           "when": "no_route_configured",
-          "action": "Declare the pages a new reader should pass through, or read the reverse funnel instead — it needs no hypothesis."
+          "action": "Declare the route as an ordered list of goals — broad entry, business outcome at the end — or read the reverse funnel instead, which needs no hypothesis."
         }
       ],
       "related_metrics": [
+        "goal_completion_rate",
         "route_frequency",
         "dead_end_rate",
         "time_to_first_value"
@@ -711,10 +786,15 @@
         {
           "metric": "route_frequency",
           "interpretation": "If completion is low while some OTHER route is frequent and succeeds, readers have found a better path than the one you designed. Adopt theirs rather than pushing yours."
+        },
+        {
+          "metric": "goal_completion_rate",
+          "interpretation": "Read the transitions, not the step sizes. The last step is almost always the smallest and says nothing; the worst TRANSITION is where the route breaks. A step that loses almost everyone while its goal total is healthy site-wide means readers reach that goal by another path."
         }
       ],
       "mcp_patterns": [
-        "forward_funnel"
+        "forward_funnel",
+        "declared_funnel"
       ]
     },
     {

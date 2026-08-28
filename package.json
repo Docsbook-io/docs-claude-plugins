@@ -1,7 +1,7 @@
 {
   "name": "docs-claude-plugins",
   "version": "1.0.0",
-  "description": "Claude Code plugin for documentation workflows — one install brings the full docs-skills catalog, the orchestration commands, the pinned subagents and the Docsbook MCP server.",
+  "description": "Claude Code plugin for documentation workflows — one install brings the docs-skills catalog, the orchestration commands, the pinned subagents and the Docsbook MCP server.",
   "keywords": [
     "documentation",
     "docs",
@@ -37,6 +37,8 @@
   },
   "scripts": {
     "sync-skills": "node scripts/sync-skills.mjs",
+    "sync-mcp": "node scripts/sync-mcp-tools.mjs",
+    "sync-upstream": "node scripts/sync-skills.mjs --update && node scripts/sync-mcp-tools.mjs && node scripts/check-plugin.mjs",
     "check": "node scripts/sync-skills.mjs --check && node scripts/check-plugin.mjs"
   }
 }

@@ -2,11 +2,12 @@
 description: Run only the ai-retrieval check — is each page structured so an LLM can extract a correct, self-contained answer chunk from it.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, mcp__plugin_docsbook_docsbook__get_workspace, mcp__plugin_docsbook_docsbook__list_workspaces, mcp__plugin_docsbook_docsbook__get_ai_unanswered, mcp__plugin_docsbook_docsbook__get_failed_searches
 argument-hint: [path-or-full] [--workspace <id>]
+skill: docs-manage
 ---
 
 # /docsbook:run-docs-ai-retrieval — quick shortcut
 
-Shortcut for `/docsbook:run-docs-analyze --only ai-retrieval`. See the underlying skill at [docs-ai-retrieval](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-ai-retrieval/SKILL.md).
+Shortcut for `/docsbook:run-docs-analyze --only ai-retrieval`. See the underlying skill at [docs-manage — retrieval rules](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-manage/references/retrieval.md).
 
 This is the check the whole plugin was built for: the chunk is the unit of optimization, not the page.
 

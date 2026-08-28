@@ -2,11 +2,12 @@
 description: Run only the gap-finder check — missing pages inferred from failed searches, unanswered AI questions, and popular queries. Best on PRO+, degrades honestly without it.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, mcp__plugin_docsbook_docsbook__get_workspace, mcp__plugin_docsbook_docsbook__list_workspaces, mcp__plugin_docsbook_docsbook__get_failed_searches, mcp__plugin_docsbook_docsbook__get_ai_unanswered, mcp__plugin_docsbook_docsbook__get_popular_searches
 argument-hint: [path-or-full] [--workspace <id>] [--open-issues]
+skill: docs-analyze
 ---
 
 # /docsbook:run-docs-gap-finder — quick shortcut
 
-Shortcut for `/docsbook:run-docs-analyze --only gap-finder`. See the underlying skill at [docs-gap-finder](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-gap-finder/SKILL.md).
+Shortcut for `/docsbook:run-docs-analyze --only gap-finder`. See the underlying skill at [docs-analyze — opportunity audit](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/opportunity-audit.md).
 
 Best on PRO+ — uses `get_failed_searches`/`get_ai_unanswered`/`get_popular_searches` when the workspace plan covers them. Degrades honestly without a workspace or on a lower plan: it still runs, just notes in `skipped` which real-query sources it couldn't use.
 

@@ -26,33 +26,37 @@ For the rest of this prompt, "the spec" means whichever of the two you received.
 
 Before editing each drifted page, decide which `docs-skills` to load. The catalog lives at `https://raw.githubusercontent.com/Docsbook-io/docs-skills/main/index.json`. Each entry has `name`, `description`, `category`, `raw_url`.
 
-**Step A — fetch the catalog once per session.** On the first drifted page, run:
+**Step A — fetch the rulebook once per session.** In-place editing of an existing page is
+governed by one skill, `docs-manage`. On the first drifted page, run:
 
 ```
-WebFetch https://raw.githubusercontent.com/Docsbook-io/docs-skills/main/index.json
+WebFetch https://raw.githubusercontent.com/Docsbook-io/docs-skills/main/skills/docs-manage/SKILL.md
 ```
 
-Filter to entries with `category == "analysis"` plus `docs-i18n` and `docs-media` — these are the only ones relevant to in-place editing. Keep the filtered list (just `name` + `description` + `raw_url`) in working memory for the rest of the session. Skills in categories `automation`, `creation`, `publishing`, `planning`, `observability` are NOT applicable to in-place editing of an existing page — never load them.
+Keep it in working memory for the rest of the session. `docs-create` (pages that do not exist
+yet), `docs-analyze` (finding what is wrong across a site) and `docs-automate` (watchers and CI)
+are not applicable to editing a page you were already told to change — never load them. Noticing
+a defect on a neighbouring page while editing means noting it and moving on, not starting an audit.
 
-**Step B — semantic match per page.** For each drifted page, look at three signals:
-1. The drift `reason` from the searcher (what changed in code).
-2. The page path (e.g. `docs/ai/*` is AI/reference, `docs/guides/*` is how-to, `docs/blog/*` is marketing prose).
-3. A quick Read of the affected section (frontmatter + first heading + the lines you are about to touch).
+**Step B — pick the reference sections.** `docs-manage` routes into `references/*.md`; load the
+**1–3** that match what you are about to touch, never the whole set. Signals: the drift `reason`
+from the searcher, the page path (`docs/ai/*` is AI/reference, `docs/guides/*` is how-to,
+`docs/blog/*` is marketing prose), and a quick Read of the affected section.
 
-Score each catalog entry against this context and pick the **2–4 most relevant skills**. Never load more than 4 — the rest is noise and burns tokens. Suggested mental model (not a hard rule — use judgement):
-
-| Editing signal | Skills worth loading |
+| Editing signal | Reference to load |
 |---|---|
-| Renamed/removed/added symbol, params, code examples | `docs-content-types`, `docs-structure-templates` |
-| Prose rewrite of any paragraph | `docs-style-tone`, `docs-audience` |
-| Touches H1/title/description/intro paragraph | `docs-seo` |
-| Touches `[text](url)` or `[[wiki]]` links / anchors | `docs-navigation-linking` |
-| Touches `![alt](img)`, videos, mermaid/diagrams | `docs-media`, `docs-accessibility` |
-| Touches code fences / frontmatter / heading levels | `docs-structure-templates`, `docs-accessibility` |
-| Page has parallel translations (e.g. `docs/es/...`, `docs/ru/...`) | `docs-i18n` |
-| Page is older than ~6 months and you're updating versions/dates | `docs-maintenance` |
+| Renamed/removed/added symbol, params, code examples | `references/writing-rules.md` §1–2 (page type, structure) |
+| Prose rewrite of any paragraph | `references/writing-rules.md` §4–5 (style, audience) |
+| Touches H1/title/description/intro paragraph | `references/retrieval.md` §3 (answer first) |
+| Touches `[text](url)` or `[[wiki]]` links / anchors | `references/writing-rules.md` §6–7 (dead ends, links) |
+| Touches `![alt](img)`, videos, mermaid/diagrams | `references/presentation.md` |
+| Touches code fences / frontmatter / heading levels | `references/writing-rules.md` §2, §7 |
+| Section needs to stand alone when quoted by an assistant | `references/retrieval.md` §2 |
+| A CTA, price, plan name or upgrade path is in the edited lines | `references/conversion.md` |
+| Page has parallel translations (e.g. `docs/es/...`, `docs/ru/...`) | `references/writing-rules.md` §2 + the workspace's language settings |
+| Page is older than ~6 months and you're updating versions/dates | `references/fix-playbooks.md` |
 
-**Step C — load only what you picked.** For each selected skill, `WebFetch <raw_url>` and read the SKILL.md body. Extract the concrete rules ("use active voice", "headings must be sentence case", "alt text required for every image", "front-load keywords in first 100 chars", etc.) and apply them while editing the current page.
+**Step C — load only what you picked.** `WebFetch https://raw.githubusercontent.com/Docsbook-io/docs-skills/main/skills/docs-manage/<reference>` for each one and read it. Extract the concrete rules ("use active voice", "headings must be sentence case", "alt text required for every image", "answer in the first 60 words", etc.) and apply them while editing the current page. Always finish with the 60-second self-check at the end of `references/writing-rules.md`.
 
 **Step D — cache per session.** Don't re-fetch a SKILL.md you already loaded earlier in the run. If the next drifted page needs the same skill, reuse the cached content.
 
@@ -76,7 +80,7 @@ These rules take precedence over any skill recommendation. If a skill suggests s
 
 - **Write it right the first time.** When you rewrite a paragraph because the spec demands it, apply loaded skill rules immediately — active voice, sentence-case headings, alt text, anchor-friendly heading text, keyword placement. Do not produce a "naive" rewrite first and then fix it.
 - **Small drive-by improvements OK, in moderation.** While editing the affected section, if a skill rule reveals a tiny fix in immediately adjacent lines (e.g. fixing passive voice in the sentence right above a renamed code example, or adding alt text to an image one line below), you may include it. Cap drive-by fixes at ~3 per page and keep them inside or directly touching the section you're already editing. Never wander into unrelated sections to "improve" them.
-- **Critical, large-scope problems → defer.** If a skill finds something serious that requires substantial work outside the spec's scope (e.g. the page mixes tutorial and reference content per `docs-content-types`, or the entire page is missing frontmatter per `docs-structure-templates`, or every image lacks alt text per `docs-accessibility`), DO NOT fix it. Add a single `<!-- TODO(docs-sync): docs-skills:<skill-name> — <one-line description> -->` comment near the top of the affected section and move on. Log it under `recommendations` in the report.
+- **Critical, large-scope problems → defer.** If a skill finds something serious that requires substantial work outside the spec's scope (e.g. the page mixes tutorial and reference content, or the entire page is missing frontmatter, or every image lacks alt text), DO NOT fix it. Add a single `<!-- TODO(docs-sync): docs-manage:<reference>#<section> — <one-line description> -->` comment near the top of the affected section and move on. Log it under `recommendations` in the report.
 - **Skill conflict → editing rule wins.** If a skill recommendation would push you past the 40% cap, force a heading restructure, or invent content not justified by the spec, ignore the recommendation.
 
 ---
@@ -86,7 +90,7 @@ These rules take precedence over any skill recommendation. If a skill suggests s
 After editing all files, print a JSON report — the only output after all edits are done:
 
 ```
-{"edited":[{"path":"docs/ai/chat.md","reason":"Renamed createSession to initSession in two code examples","skills_applied":["docs-style-tone","docs-structure-templates"]}],"skipped":[{"path":"docs/guides/getting-started/creating-docs.md","reason":"diff_cap exceeded — left TODO comment"}],"recommendations":[{"path":"docs/ai/chat.md","skill":"docs-content-types","note":"Page mixes how-to and reference; left TODO for human review"}]}
+{"edited":[{"path":"docs/ai/chat.md","reason":"Renamed createSession to initSession in two code examples","skills_applied":["docs-manage:writing-rules#4","docs-manage:writing-rules#2"]}],"skipped":[{"path":"docs/guides/getting-started/creating-docs.md","reason":"diff_cap exceeded — left TODO comment"}],"recommendations":[{"path":"docs/ai/chat.md","skill":"docs-manage:writing-rules#1","note":"Page mixes how-to and reference; left TODO for human review"}]}
 ```
 
 No other prose. The curator reads this report to build the merge set. `skills_applied` and `recommendations` are new fields — keep them even when empty (`[]`).

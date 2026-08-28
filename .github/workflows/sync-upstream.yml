@@ -1,0 +1,76 @@
+name: Sync upstream
+
+# The wall in ci.yml stops a stale catalog from MERGING. Nothing made the catalog
+# move, which is the failure that actually happened: the pin sat still while
+# upstream released five times and collapsed 52 skills into 4, and CI stayed green
+# the whole way, because "matches the pin" is true of a pin nobody advances.
+#
+# This job advances it. Hourly, plus on demand. It commits straight to main rather
+# than opening a pull request on purpose — the diff is machine-generated and
+# byte-checked by the same script CI runs, and a bot PR is a notification someone
+# has to act on, which is the thing that already failed here once.
+#
+# Both syncs run: the skills catalog (a git pin, moved to upstream main) and the
+# MCP tool list (fetched from the live server). They drift independently — the
+# tool list was missing ten tools the server had gained while the skills were also
+# stale — so a job that refreshed only one would still leave the plugin lying
+# about the other.
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Move the pin to docs-skills main and re-sync
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/sync-skills.mjs --update
+
+      - name: Refresh the MCP tool list
+        # A deploy in progress makes this fail; that is not a reason to abandon a
+        # skills update that already succeeded, and the next run is an hour away.
+        continue-on-error: true
+        run: node scripts/sync-mcp-tools.mjs
+
+      # The same guardrails a pull request has to pass. If upstream shipped
+      # something this plugin's commands contradict — a renamed reference file, a
+      # skill that went away — the job fails HERE, with the tree uncommitted, and
+      # the plugin keeps working on the last good pin until a human repoints it.
+      - name: Guardrails
+        run: node scripts/check-plugin.mjs
+
+      - name: Commit if anything moved
+        run: |
+          # --porcelain, not `git diff --quiet`: a skill or reference file that
+          # upstream ADDED lands here untracked, and a diff-only test calls that
+          # "already in sync" and never commits it.
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "already in sync"
+            exit 0
+          fi
+          SKILLS=$(node -p "const l=require('./plugins/docsbook/skills/.sync-lock.json'); l.ref.slice(0,12) + ' — ' + l.skill_count + ' skills, ' + l.file_count + ' files'")
+          TOOLS=$(node -p "require('./scripts/mcp-tools.json').count")
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: sync docs-skills catalog and MCP tool list" \
+                     -m "docs-skills pinned at ${SKILLS}" \
+                     -m "MCP tools registered: ${TOOLS}"
+          git push

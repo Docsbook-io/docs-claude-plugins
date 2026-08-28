@@ -2,11 +2,12 @@
 description: Run only the media check — missing/oversized/broken images, video, and other embedded media in doc pages.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 argument-hint: [path-or-full] [--workspace <id>]
+skill: docs-analyze
 ---
 
 # /docs-media-audit — quick shortcut
 
-Shortcut for `/docsbook:run-docs-analyze --only media`. See the underlying skill at [docs-media](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-media/SKILL.md).
+Shortcut for `/docsbook:run-docs-analyze --only media`. See the underlying skill at [docs-analyze — media detector](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/detectors.md).
 
 Named `/docs-media-audit` (with the `-audit` suffix) to avoid colliding with the existing global `docs-media` skill name.
 
