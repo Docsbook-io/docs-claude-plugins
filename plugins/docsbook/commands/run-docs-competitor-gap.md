@@ -2,11 +2,12 @@
 description: Run only the competitor-gap check — topics a named competitor covers that these docs don't, optionally cross-checked against what you already rank for.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, WebFetch, mcp__plugin_docsbook_docsbook__get_workspace, mcp__plugin_docsbook_docsbook__list_workspaces, mcp__plugin_docsbook_docsbook__get_search_rankings
 argument-hint: [path-or-full] --competitor <url> [--workspace <id>]
+skill: docs-analyze
 ---
 
 # /docsbook:run-docs-competitor-gap — quick shortcut
 
-Shortcut for `/docsbook:run-docs-analyze --only competitor-gap`. See the underlying skill at [docs-competitor-gap](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-competitor-gap/SKILL.md).
+Shortcut for `/docsbook:run-docs-analyze --only competitor-gap`. See the underlying skill at [docs-analyze — competitor-coverage check](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/external-checks.md).
 
 ## Workflow
 

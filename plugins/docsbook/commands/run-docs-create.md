@@ -1,6 +1,7 @@
 ---
 description: Full pipeline — crawl a URL (or research from scratch when no source), optionally enrich with marketing pages, publish to GitHub, configure the Docsbook workspace
 allowed-tools: Agent, Read, Write, Bash, AskUserQuestion
+skill: docs-create, docs-manage
 ---
 
 # /docsbook:run-docs-create — full crawl → enrich → publish → configure pipeline
@@ -523,11 +524,11 @@ Never offer to save a memory the user did not actually express. A single "Y/N" o
 
 ## Knowledge references
 
-- [`docs-from-site` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-from-site/SKILL.md) — website crawl tips, writing rules
-- [`docs-from-code` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-from-code/SKILL.md) — code-repo extraction rules, API enumeration per language
-- [`docs-from-docs` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-from-docs/SKILL.md) — platform-by-platform MDX normalisation tables
-- [`docs-publish` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-publish/SKILL.md) — HTTPS vs SSH, `gh repo create` pitfalls
-- [`docs-setup-workspace` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-setup-workspace/SKILL.md) — MCP probe order, plan-gated calls
+- [`docs-from-site` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-create/references/sources.md) — website crawl tips, writing rules
+- [`docs-from-code` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-create/references/sources.md) — code-repo extraction rules, API enumeration per language
+- [`docs-from-docs` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-create/references/sources.md) — platform-by-platform MDX normalisation tables
+- [`docs-publish` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-create/references/publish.md) — HTTPS vs SSH, `gh repo create` pitfalls
+- [`docs-setup-workspace` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-manage/references/site-config.md) — MCP probe order, plan-gated calls
 - [`docs-create` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-create/SKILL.md) — overall pipeline rationale
 - `docs-content-enricher` agent (local) — generates competitor/vs, learn/, glossary/, use-cases/, and migration pages on top of crawled docs. Honest tone, real evidence only, never fabricates competitors or terms.
 - `docs-from-scratch` agent (local) — when no source URL/repo exists, takes a project topic and researches 3–5 competitors via WebSearch+WebFetch, then writes original docs following the domain's conventions. Marks product-specific claims with TODO so the user can fill them in once the product exists.

@@ -2,11 +2,12 @@
 description: Run only the title-rewriter check — titles with high impressions but zero clicks, rewritten to earn the click (PRO).
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, mcp__plugin_docsbook_docsbook__get_workspace, mcp__plugin_docsbook_docsbook__list_workspaces, mcp__plugin_docsbook_docsbook__get_search_zero_click
 argument-hint: [path-or-full] --workspace <id>
+skill: docs-analyze
 ---
 
 # /docsbook:run-docs-title-rewriter — quick shortcut
 
-Shortcut for `/docsbook:run-docs-analyze --only title-rewriter`. See the underlying skill at [docs-title-rewriter](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-title-rewriter/SKILL.md).
+Shortcut for `/docsbook:run-docs-analyze --only title-rewriter`. See the underlying skill at [docs-analyze — rejected-searches pass](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/signals.md).
 
 ## Workflow
 

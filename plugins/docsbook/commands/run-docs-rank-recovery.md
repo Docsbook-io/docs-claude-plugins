@@ -2,11 +2,12 @@
 description: Run only the rank-recovery check — pages that dropped in search position, with a rewrite recommendation. Requires live GSC ranking data.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, mcp__plugin_docsbook_docsbook__get_workspace, mcp__plugin_docsbook_docsbook__list_workspaces, mcp__plugin_docsbook_docsbook__get_search_rankings
 argument-hint: [path-or-full] --workspace <id>
+skill: docs-analyze
 ---
 
 # /docsbook:run-docs-rank-recovery — quick shortcut
 
-Shortcut for `/docsbook:run-docs-analyze --only rank-recovery`. See the underlying skill at [docs-rank-recovery](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-rank-recovery/SKILL.md).
+Shortcut for `/docsbook:run-docs-analyze --only rank-recovery`. See the underlying skill at [docs-analyze — striking-distance band](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/signals.md).
 
 This check requires live `get_search_rankings` data — there is no text-only fallback, because there is nothing to recover from without knowing what dropped.
 

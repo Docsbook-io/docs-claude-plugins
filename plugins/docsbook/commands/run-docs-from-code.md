@@ -1,6 +1,7 @@
 ---
 description: Extract a code repository into a Markdown docs folder with API surface and configuration
 allowed-tools: Agent, Read
+skill: docs-create
 ---
 
 # /docsbook:run-docs-from-code — extract a code repo into Markdown docs
@@ -45,4 +46,4 @@ Next:
 
 - `{"status":"error","reason":"clone_failed"}` → print `hint` and `detail`. Suggest `gh auth login` for private repos.
 - `{"status":"error","reason":"no_readme"}` → tell the user the repo has no usable README and suggest passing a different source or running `/docsbook:run-docs-from-site <url>` if a marketing site exists.
-- Tips and rationale (project-type detection, API enumeration per language, secret scrubbing) live in the [`docs-from-code` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-from-code/SKILL.md). Read it if you need to tune behaviour.
+- Tips and rationale (project-type detection, API enumeration per language, secret scrubbing) live in the [`docs-from-code` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-create/references/sources.md). Read it if you need to tune behaviour.

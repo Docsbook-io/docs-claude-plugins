@@ -2,11 +2,12 @@
 description: Run only the navigation-linking check — broken links, orphan pages, and nav-tree consistency across the full doc graph.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 argument-hint: [full-or-folder] [--workspace <id>]
+skill: docs-analyze
 ---
 
 # /docsbook:run-docs-navigation-linking — quick shortcut
 
-Shortcut for `/docsbook:run-docs-analyze --only navigation-linking`. See the underlying skill at [docs-navigation-linking](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-navigation-linking/SKILL.md).
+Shortcut for `/docsbook:run-docs-analyze --only navigation-linking`. See the underlying skill at [docs-analyze — links-and-navigation detector](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/detectors.md).
 
 This check needs the full doc graph, not a single page — pass `SCOPE=full` or a folder, never one file.
 

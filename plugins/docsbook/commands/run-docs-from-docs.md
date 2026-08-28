@@ -1,6 +1,7 @@
 ---
 description: Import existing docs from Mintlify, GitBook, Docusaurus, Nextra, VitePress, or Starlight
 allowed-tools: Agent, Read
+skill: docs-create
 ---
 
 # /docsbook:run-docs-from-docs — import an existing docs platform into Markdown
@@ -46,4 +47,4 @@ If `warnings` contains broken-link or unknown-component entries, surface the cou
 ## Failure handling
 
 - `{"status":"error","reason":"platform_unknown"}` → print `hint` verbatim. List the supported platforms. Suggest `/docsbook:run-docs-from-code <repo>` for plain code repos.
-- Tips and rationale (per-platform MDX normalisation tables, link rewriting, asset migration) live in the [`docs-from-docs` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-from-docs/SKILL.md). Read it if you need to tune behaviour.
+- Tips and rationale (per-platform MDX normalisation tables, link rewriting, asset migration) live in the [`docs-from-docs` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-create/references/sources.md). Read it if you need to tune behaviour.

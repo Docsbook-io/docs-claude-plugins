@@ -1,6 +1,6 @@
 {
   "name": "docsbook",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Everything Docsbook does inside Claude Code: pre-push code↔docs drift detection, docs bootstrap from a URL or from scratch, a read-only quality audit, a recurring analytics pipeline, growth reasoning, and the full docs-skills catalog — over the Docsbook MCP server.",
   "author": {
     "name": "Dan Bondarev",

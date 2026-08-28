@@ -1,6 +1,7 @@
 ---
 description: Crawl a product URL into a Markdown docs folder with branding extracted
 allowed-tools: Agent, Read
+skill: docs-create
 ---
 
 # /docsbook:run-docs-from-site — crawl a website into Markdown docs
@@ -45,4 +46,4 @@ Next:
 ## Failure handling
 
 - `{"status":"error","reason":"fetch_failed"}` → print the warning, do not retry with a different agent. Suggest checking the URL or DNS.
-- Tips and rationale (writing rules, page caps, branding regex) live in the [`docs-from-site` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-from-site/SKILL.md). Read it if you need to tune behaviour.
+- Tips and rationale (writing rules, page caps, branding regex) live in the [`docs-from-site` skill](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-create/references/sources.md). Read it if you need to tune behaviour.

@@ -2,11 +2,12 @@
 description: Run only docs-question-clusterer — AI-chat questions clustered into content_gap vs ai_chat_failure (PRO).
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, mcp__plugin_docsbook_docsbook__get_workspace, mcp__plugin_docsbook_docsbook__list_workspaces, mcp__plugin_docsbook_docsbook__get_ai_questions, mcp__plugin_docsbook_docsbook__get_ai_unanswered, mcp__plugin_docsbook_docsbook__get_negative_feedback, mcp__plugin_docsbook_docsbook__get_failed_searches, mcp__plugin_docsbook_docsbook__get_popular_searches
 argument-hint: [optional: --workspace <id>] [--period 30d]
+skill: docs-analyze
 ---
 
 # /docs-questions — quick shortcut
 
-Shortcut for `/docs-insights --only docs-question-clusterer`. See the underlying skill at [docs-question-clusterer](https://github.com/Docsbook-io/docs-skills/blob/main/skills/observability/docs-question-clusterer/SKILL.md).
+Shortcut for `/docs-insights --only docs-question-clusterer`. See the underlying skill at [docs-analyze — question-clusters pass](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/signals.md).
 
 ## Workflow
 

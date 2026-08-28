@@ -6,7 +6,7 @@ argument-hint: --sot-dir <path> [--workspace <id|owner/repo>] [--lenses segment,
 
 # /enrich-audience — prepare the growth soil
 
-Runs the `docs-audience-enricher` skill: three growth lenses reason over your product source-of-truth + real analytics, then **append** their findings back into the knowledge base so the next growth pass starts richer. Read-and-enrich only — it changes no product code and no client docs.
+Runs the audience-enrichment pipeline — the `docs-analyze` opportunity audit (`references/opportunity-audit.md`) applied through three growth lenses reason over your product source-of-truth + real analytics, then **append** their findings back into the knowledge base so the next growth pass starts richer. Read-and-enrich only — it changes no product code and no client docs.
 
 This is the generic, product-agnostic entry point. For Docsbook itself, the repo's local `/enrich-audience` wrapper pre-fills `--sot-dir about/` and the workspace; everywhere else, pass `--sot-dir` explicitly.
 

@@ -1,66 +1,133 @@
 ---
 name: docs-create
-description: Turn a URL or repo into a live docs site in one command. Full end-to-end pipeline — detects the source (website, code, or Mintlify/GitBook/Docusaurus), generates structured Markdown, publishes to GitHub, and configures the Docsbook workspace. Minimal questions, maximum output.
+description: Create documentation that did not exist before — from a product website, a code repository, another docs platform you are migrating off, or nothing but a product name. Runs one pipeline: audit the product and the source, decide the structure, write the pages, preview, publish. Use when the user says create docs, generate docs, from this URL, from this repo, migrate from Mintlify/GitBook/Docusaurus, import our docs, imagine docs, we have no docs, we have no repo, without GitHub, сделай документацию, повтори документацию по ссылке, придумай документацию.
 metadata:
-  version: 1.2.0
+  version: 3.1.0
   category: creation
-  mode: authoring
+  mode: orchestrator
   requires_docsbook_mcp: false
-  keywords: [create, pipeline, generate, docs, new]
+  accelerated_by:
+    - markdown-lsp      # graph/semantic search over an existing docs tree — faster than walking files
+    - docsbook-mcp      # publish pages and configure the live site, if a workspace is connected
+  produces_files:
+    - docs-output/<name>/**
+    - docs-plan.md
+  keywords: [create, generate, new-docs, from-url, from-site, from-repo, from-github, migrate, migration, import, mintlify, gitbook, docusaurus, nextra, vitepress, imagine, from-scratch, product-audit, no-docs, no-repo, no-github, without-github, hosted, сделай-документацию, придумай-документацию]
 ---
 
-# docs-create — End-to-end docs pipeline
+# docs-create — Bring documentation into existence
 
-## Docsbook chat agent (in-app)
+One skill for every way documentation gets created: from a live site, from code, from another platform (migration), or from an idea alone. The four differ only in **where the truth comes from**. Everything after that — auditing the product, choosing the structure, writing the pages, previewing, publishing — is the same pipeline, and it lives here.
 
-When this skill is read by the Docsbook /chat agent — the environment where agent-engine tools (`crawl_website`, `create_workspace`, `generate_doc_site`, `commit_docs`, `update_branding`, `set_option`) are available — map the workflow onto those tools instead of the CLI steps below, and follow the auto-mode contract:
+**The intelligence lives in this skill, not in a helper tool.** Read the source yourself, decide the structure yourself, write the pages yourself. Delegate only publishing and configuration to whatever platform is connected.
 
-- **Pipeline:** `crawl_website(url)` → `create_workspace` (custom_name from the crawl's `suggested_name`) → ONE `generate_doc_site` call passing `site_context` (digest of crawled pages) and `source_branding` (the crawl's brand tokens) → it generates all pages in parallel, applies branding, and publishes.
-- **Every visible step is a TOOL CALL, never narrated text.** The engine emits one chip per crawled page (`crawl_page`), per generated file (`write_doc_page`), and for the publish step (`publish_docs`). Do not stream progress as prose like "Wrote README.md (1.1k chars)" — the user must see real tool calls.
-- **Branding is part of creation, not a follow-up.** Source brand tokens (accent color, font, logo, favicon, site name) are applied verbatim during generation. If the crawl found no tokens, derive branding immediately — never leave the site generic and never invent a default accent.
-- **Auto-mode ON (the default):** zero questions. Decide everything yourself for maximum wow: crawl, generate, publish to Docsbook hosting, apply source branding, and immediately enable the recommended free features — SEO, GEO, AEO, AI chat — via `set_option`. Do not ask for confirmation at any step; the payoff is a fully branded, fully configured live site in one turn.
-- **Auto-mode OFF:** the user kept control — pause at checkpoints with `ask_user` (one per turn): (1) proposed page structure, (2) branding palette derived from detected signals, (3) which features to enable after publish. Mirror `/docs-create-interactive`.
+## Companion skills
+
+| Skill | Its job here |
+|---|---|
+| `docs-manage` | The writing rulebook. Load it **before** writing the first page — page types, structure, style, retrieval, conversion — and the site/feature configuration used at the publish step. |
+| `docs-analyze` | Runs **after** docs exist. Do not audit your own fresh output with this skill; hand it over. |
+| `docs-automate` | Wires the drift guards and monitors once the docs are live. Offer it at the end, never run it mid-pipeline. |
+
+## Phases and their modes
+
+An orchestrator crosses modes only at declared boundaries. These are the boundaries:
+
+| Phase | Mode | May it write? |
+|---|---|---|
+| 1. Product & source audit | `audit` | Reports only. May write `docs-plan.md` and additive blocks in a private source-of-truth. |
+| 2. Structure decision | `audit` | Nothing on disk except the plan. |
+| 3. Generation | `authoring` | Writes new pages. Never repairs pages it did not create. |
+| 4. Preview & publish | `platform` | Publishes what phase 3 wrote. Changes no content. |
 
 ## Workflow
 
-1. Ask at most 1 question before starting: the source URL/repo (if missing). The GitHub account comes from `gh auth status` when present; if absent, the pipeline still runs the crawl and stops cleanly with the path printed.
-   - **Project name — never invent it.** Derive the project/site name in this priority order: (1) the source website's brand name (from its `<title>` / `og:site_name`); (2) the GitHub repo name (the part after `owner/`); (3) if neither source exists or the name is unclear, **ask the user** what to name the project. Do not synthesize a random or placeholder name. This name is used for the output folder and the workspace display name.
-2. **Ask about content enrichment.** Before the crawl, ask the user which marketing-driven pages to add on top of the core docs — competitor comparisons (`blog/<you>-vs-<competitor>.md`), educational topic cluster (`learn/`), glossary + use-cases (`glossary/`, `use-cases/`), migration guides (`migrate-from-<competitor>.md`). Multi-select; skipping is a valid answer. If competitor-vs or migration is chosen, ask for a comma-separated competitor list or leave blank to auto-detect from the crawl.
-3. Detect the source type using the `/docs-detect-source` logic — route to `website` (`/docs-from-site`), `github-code-repo` (`/docs-from-code`), or a docs platform (`/docs-from-docs`). Each route reads the source, decides the structure, and writes the pages itself — the intelligence lives in these skills, not in a helper tool.
-4. Build core docs using the appropriate sub-skill. **Simultaneously extract branding signals from the SOURCE** — read its `<meta name="theme-color">`, `og:image`, favicon, title, and any inline `--accent` CSS tokens; for code repos also scan the README for explicit hex values or brand color mentions. Store every signal you found (or explicitly note when none was found). Never invent an accent color when no signal exists.
-5. **First-run enrichment.** Apply `/docs-first-run-enrichment` so the first thing the user sees is a sellable, on-brand site and not a bare skeleton — it auto-brands from the step 4 signals and generates a **foldered, multi-section structure (hero, getting-started, concepts, `features/`, `guides/`, `use-cases`, `faq`, reference — target 10–18 real pages, folders become the nav sub-header)** instead of a flat handful of thin pages. **Announce what you are applying:** before generating, tell the user in one short line which writing sub-skills you are using for high-quality, conversion-oriented docs — `docs-audience` (reader fit), `docs-style-tone` (tighten prose), `docs-content-types` (Diátaxis structure), `docs-seo` (rankability) — and actually apply each of them while writing the pages, so the user sees the orchestration and the output reads like sales-grade docs.
-6. **Enrich (only if step 2 selected any category).** Generate 3–5 pages per chosen category on top of the crawled folder. Never fabricate competitors or terms — skip a section silently if inputs are insufficient. Enrichment failure does not block publish — core docs still ship.
-7. **Preview + confirm.** Before publishing, print the folder tree (including enriched folders) and excerpts from up to 3 representative pages plus one enriched page if available. Ask the user before pushing — never silently create a GitHub repo.
-8. Publish the generated folder to GitHub using the `/docs-publish` logic — only if `gh` is authenticated. Otherwise stop with `status: crawl_only` and instructions to run `/docs-publish <path>` after `gh auth login`.
-9. **Confirm workspace settings, then configure** the Docsbook workspace using `/docs-setup-workspace`. Show what will be applied (branding, UI, AI, SEO, languages) and let the user accept all, decline, or pick sections. **Branding runs by default and always leads with the detected SOURCE brand signals from step 4** — present the derived palette (accent, muted, foreground, background, theme) built from those signals before showing other settings, so the user sees real brand options and not generic placeholders. If MCP is available, apply branding via `/docs-branding` before any other workspace config, using the signals collected in step 4 as the DERIVE input. If no signal was detected (noted in step 4), run `/docs-branding` anyway — let it ask the user for a reference URL or color rather than skipping or inventing. Skip gracefully if MCP is unavailable — print connection instructions but do not fail the pipeline.
-10. Report the local path, GitHub URL (if published), Docsbook URL (if configured), core page count, enriched page count by section, and detected source type.
+### 0. Route the input
+
+Classify what you were given, then read the matching section of `references/sources.md`:
+
+| Input | Route |
+|---|---|
+| Product/marketing URL | **site** — render the pages, read real content |
+| `github.com/<owner>/<repo>` or a local code path | **code** — README, tree, exported API, examples |
+| A repo or URL carrying a docs-platform marker | **migration** — mirror the structure, normalise syntax |
+| A product name or one-liner, no source | **idea** — invent the pages, never invent the facts |
+
+One ambiguous signal is not a detection. Require a platform-specific config file or meta tag before routing to **migration**; when nothing is conclusive, default to **site** rather than blocking. A populated `<head>` does not mean the content is there — most product sites are JS shells, so the content pass renders before it reads.
+
+**Name the project, never invent it.** In priority order: the site brand (`<title>` / `og:site_name`, taglines stripped) → the repo name after `owner/` → the platform config's title. If none is readable, ask. A placeholder name is not an acceptable fallback.
+
+### 1. Audit the product and the source
+
+Before deciding a single page, establish who the docs are for and what the product actually claims. This is the phase most generation skips, and it is why generated docs read like a file dump. Full method in `references/product-audit.md`; the short version:
+
+- **Who enters, how, and against whom** — segments and their jobs-to-be-done, every entry path, the competitors the product is measured against.
+- **Monetization model** — free / open-source / self-serve SaaS / sales-led. This decides whether the site needs a pricing page, a CTA ladder, or neither.
+- **Call-to-action destination** — read it *before* the first page is written; every hero and every "Next steps" block depends on it. An explicitly configured CTA destination beats any CTA you would infer.
+- **Brand signals** — accent colour, colour scheme, logo (wordmark) vs icon (favicon), font, social links. Record each with its source; record a missing one as missing. Never invent a colour.
+
+Ask the discovery questions from `references/product-audit.md` only when the source cannot answer them. One question at a time, and skip any question the source already answered.
+
+Interactive runs pause here for confirmation. Auto runs state what they inferred in one line ("treating this as a self-serve developer tool — correct me if I'm off") and continue.
+
+### 2. Decide the structure
+
+Derive the outline from what you found, then group leaf pages into **folders by meaning**. Folders are not cosmetic: they become the site's navigation sub-header, and that is the difference between real documentation and a flat file list.
+
+Target **10–18 substantive leaf pages** when the source supports it. A well-scoped 8-page site beats 15 stubs; three solid pages beat five thin ones. Never create a placeholder page "for later". The page-set table, the per-type content rules, and the link-graph requirements are in `references/structure.md`.
+
+An FAQ (6–10 genuine Q&A) and at least one use-case page are effectively mandatory. They kill an evaluating reader's objections *and* they are the structure that answer engines lift into citations — see the AEO note in `references/structure.md`.
+
+Print the proposed tree. Interactive runs wait for approval and apply edits before generating anything.
+
+### 3. Generate
+
+Load `docs-manage` and write to its rules rather than restating them: page type per page, frontmatter, heading discipline, active voice, retrieval-friendly passages, the conversion pattern that matches the monetization model from phase 1. Tell the user in one line which rule sets you are applying, then apply them.
+
+Decide the full page list *before* writing, so every page knows its real neighbours and can link to them accurately.
+
+Non-negotiable, on every page: frontmatter `title` (50–60 chars, search-intent) and `description` (130–160 chars, active voice, states the outcome); benefit-first headings; active voice, second person; no filler ("simply", "just", "easily", "powerful", "robust", "seamless"); real product facts only — never `example.com`, never a capability the source did not show.
+
+**Everything must trace to something you read.** A source too thin to support a page means skip the page and record why. It never means invent.
+
+### 4. Preview, publish, configure
+
+- Print the folder tree and excerpts from up to three representative pages plus the FAQ.
+- Ask before publishing: "Does this look right? Type **yes** to publish, or describe what to change." Auto-mode may skip the ask; a silent repo creation is never acceptable.
+- **Pick the transport before you look for a repository.** With the Docsbook MCP connected, the platform hosts the docs repository itself: `create_workspace` with **no** `repo_full_name` (pass `custom_name`), then `write_docs` with every page in one call. The user needs no GitHub account, no connected GitHub app and no repository of their own. A repository of theirs is an *option* (`repo_full_name: "owner/repo"`), never a precondition. Only with no platform connected does publishing mean git and a GitHub remote.
+- Publish **all** pages in one atomic commit, not one file per commit. If no publishing transport is authenticated at all, stop cleanly with `status: crawl_only`, the local path, and the follow-up command. That is a valid ending, not an error.
+- Configure the live site through `docs-manage` — branding from the phase-1 signals, reading affordances, the nav sub-header built from your folders, and the discovery/AI settings the plan allows. A published-but-unconfigured site undersells the work.
+- **Declare the goals and the funnel the phase-1 audit already named.** That audit writes down the goals and a 3–5 step path per segment, and on almost every run they stay prose in a report: the site ships, and three months later nobody can say whether it worked, because nothing was ever declared as success. Turning them into real measurement is one step through `docs-manage`'s `references/goals-funnels.md`, and it is cheap here in a way it never is later — the person who decided what the site was for is still in the room.
+- Report: local path, repository URL, live site URL, page count by folder, and every section skipped with its reason.
+
+Details for each step: `references/publish.md`.
 
 ## Guardrails
 
-- Never ask more than 2 questions before starting: the source and the enrichment categories. Derive everything else from context.
-- `gh` is optional for the crawl step. Only the publish step requires it — if missing, surface that as a clean stopping point, not an error.
-- Always show a real preview (tree + page excerpts) before publish — a one-line summary is not enough for users to decide.
-- Always confirm workspace settings before applying — `update_languages` in particular enables 4 languages by default and surprises users.
-- If MCP is unavailable at step 8, print setup instructions and exit cleanly — do not abort the whole pipeline.
-- Output folder / project name is derived from the source (site brand → repo name), never invented. If no source name can be determined, ask the user — do not fall back to a random or placeholder name. Only prompt about a derived name if there is a genuine collision.
-- When committing into an existing repo (rather than publishing a fresh one), write pages to the **repository root** — `README.md`, `getting-started.md`, `guides/…` — unless the repo already has a `docs/` folder, in which case respect that existing structure. Never wrap a fresh repo's pages in a new top-level `docs/` directory.
-- **Never push a default accent color** (`#6366f1` or any other) when branding extraction failed — the branding pass MUST run with `/docs-branding` (which asks for a reference) rather than silently applying a generic default.
-- Never fabricate competitors, glossary terms, or product features during enrichment. If the crawler produced no evidence, skip that section and record the reason.
-- **Branding is mandatory, not optional** — even when no signals are detected, the `/docs-branding` skill runs at step 8 to derive from a user-supplied reference, because a generic branding output is worse than an un-branded one.
+- **Never invent.** Not brand colours, not competitors, not glossary terms, not capabilities, not metrics, not a project name. A missing signal is recorded as missing and the dependent field is skipped.
+- **Never overwrite human-set branding or human-authored prose.** Enrichment is additive. Writes into a private source-of-truth go inside skill-owned markers, and a re-run replaces its own prior block rather than stacking duplicates.
+- **Never wrap a fresh repository's pages in a new top-level `docs/` folder.** Write to the repository root, or into an existing `docs/` folder if the repo already has one.
+- **Never commit secrets.** Skip `.env`, `*.key`, `*.pem`, and anything matching a token pattern (`sk-`, `ghp_`, `AKIA`).
+- **Never lose content in a migration.** A component that cannot be normalised keeps its inner text verbatim plus a `> **TODO:**` note. Heading hierarchy is preserved, slugs stay URL-stable.
+- **Never make GitHub a precondition.** When a platform that hosts documentation is connected, "I have no repo / no GitHub" is a supported starting point, not a blocker — create the site from scratch and publish into the hosting the platform provides. Asking the user to connect GitHub, or to go make a repository first, when the connected platform could have hosted it is a failed run, not a careful one.
+- **Never audit your own output with this skill.** Fresh docs go to `docs-analyze`.
+- A thin JS shell is skipped and noted, never filled with invented content.
+- Cap the read at ~50 pages; beyond that a site is mostly blog noise and a repo should be grouped by package, not by file.
+- Ask at most two questions before starting (the source, and which enrichment sections to add). Everything else is derived. Interactive runs are the exception — there, every checkpoint waits.
 
-## Acceptance Criteria
+## Interactive mode
 
-- [ ] Source type detected without manual input
-- [ ] Project name taken from the site brand or repo name — or the user is asked — never invented
-- [ ] User chooses enrichment categories (or skips) before the crawl runs
-- [ ] Docs folder is foldered and multi-section — 10–18 real pages when the source supports it (fewer only for genuinely thin sources), including a `faq.md` and ≥1 use-case; never a flat README + one thin page
-- [ ] `/docs-first-run-enrichment` applied — foldered structure with folders mapped to the nav sub-header, and the writing sub-skills (docs-audience, docs-style-tone, docs-content-types, docs-seo) were announced to the user and applied during generation
-- [ ] If enrichment was selected, 3–5 pages per category exist on disk; skipped sections have a recorded reason
-- [ ] Preview (tree + page excerpts, including enriched pages when present) printed before any publish prompt
-- [ ] Pipeline completes without `gh` when GitHub is not authenticated (status `crawl_only`)
-- [ ] GitHub repo created and pushed successfully when `gh` is available and user confirms
-- [ ] Branding signals from the source were collected at step 4 (or noted as absent) and presented at step 8 — never a generic default accent
-- [ ] `/docs-branding` was run at step 8 using the detected SOURCE brand signals as the DERIVE input — not skipped, not applied silently with defaults
-- [ ] Workspace configuration is confirmed by the user before applying
-- [ ] Docsbook workspace configured for the selected sections (or setup instructions printed if MCP unavailable)
-- [ ] Final report shows local path, GitHub URL (if published), Docsbook URL (if configured), and enrichment counts by section
+When the user wants control, the same pipeline pauses at six checkpoints — source detection, structure, enrichment sections, branding palette, repository name, features to enable. One question per turn, each waiting for an explicit answer, each applied before the next phase runs. Never skip a checkpoint and never enable an extra the user did not pick. `references/publish.md` lists the checkpoints and what each must confirm.
+
+## Acceptance criteria
+
+- [ ] Route chosen from real signals; project name taken from brand/repo/config or asked — never invented.
+- [ ] Product audit ran: segments, entry paths, competitors, monetization model, CTA destination, and brand signals each recorded with a source or noted absent.
+- [ ] Structure is foldered and multi-section — 10–18 real pages where the source supports it, zero stubs, `faq.md` and ≥1 use-case present.
+- [ ] `docs-manage` rules were announced and applied while writing; every page carries `title` + `description` frontmatter.
+- [ ] Link graph wired: index links to every section, every leaf links to the hero and a sibling, zero orphans, descriptive anchor text.
+- [ ] Preview (tree + excerpts incl. FAQ) printed before any publish prompt.
+- [ ] All pages published in one atomic commit — or `crawl_only` with the local path and the follow-up command.
+- [ ] Site configured through `docs-manage`, or connection instructions printed without failing the pipeline.
+- [ ] The goals and the funnel named in the phase-1 audit were declared against the live site, or their absence was reported with the reason.
+- [ ] Final report lists local path, repository URL, live URL, page count by folder, and skipped sections with reasons.

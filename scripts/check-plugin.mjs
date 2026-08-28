@@ -16,6 +16,14 @@
  *     skill is ambiguous to the model.
  *  5. Flattening the skills tree rewrites relative metric_dictionary paths; if
  *     that rewrite is ever wrong, eight skills point at nothing.
+ *  6. Nothing checked that a skill a command names still EXISTS. Upstream
+ *     collapsed its 52 skills into 4 orchestrators; the sync faithfully copied
+ *     the 4, and 34 commands plus 8 subagents were left pointing at deleted
+ *     files — every `run-docs-*` shortcut linking to a 404 and telling the
+ *     model to read it as the authoritative rulebook. CI was green throughout,
+ *     because a dangling reference is only ever a link in prose. It is checked
+ *     now, on the two forms that are actually machine-readable: the `skill:`
+ *     frontmatter each command declares, and any docs-skills blob URL.
  */
 
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs"
@@ -83,6 +91,41 @@ for (const c of commandNames) {
   }
 }
 
+// ── 6. every skill and reference a command or agent names actually exists ────
+// Deliberately NOT a scan for bare `docs-*` tokens in prose: the /docs-insights
+// analyzer identifiers (docs-utm-analyzer and its five siblings) are this
+// plugin's own namespace, frozen because they live in users'
+// .docsbook/insights/.config.json, and they happen to look exactly like the
+// upstream skill names they were once 1:1 with. A checker that flagged those
+// would be a checker somebody switches off. Two checkable forms instead.
+const skillSet = new Set(skillNames)
+const inCatalog = (name, ref) => {
+  if (!skillSet.has(name)) return `no skill named '${name}' in the synced catalog (have: ${skillNames.join(", ")})`
+  if (ref && !existsSync(join(PLUGIN, "skills", name, ref))) return `skills/${name} has no '${ref}'`
+  return null
+}
+
+for (const f of bodyFiles) {
+  const src = readFileSync(f, "utf8")
+  const rel = f.slice(REPO.length + 1)
+
+  // a. `skill:` frontmatter — the command's declared entry point.
+  const declared = src.match(/^skill:\s*(.+)$/m)
+  if (declared) {
+    for (const name of declared[1].split(",").map((n) => n.trim()).filter(Boolean)) {
+      const why = inCatalog(name)
+      if (why) problems.push(`${rel}: frontmatter declares skill '${name}' — ${why}`)
+    }
+  }
+
+  // b. Links into the upstream catalog. A 404 here is a link the model is told
+  //    to treat as authoritative, so it reads as missing knowledge, not a typo.
+  for (const m of src.matchAll(/docs-skills\/(?:blob|raw)\/main\/skills\/([a-z0-9-]+)\/(\S*?)(?=[)\s`"']|$)/g)) {
+    const why = inCatalog(m[1], m[2] || null)
+    if (why) problems.push(`${rel}: links to docs-skills skills/${m[1]}/${m[2]} — ${why}`)
+  }
+}
+
 // ── 5. every metric_dictionary path resolves ─────────────────────────────────
 for (const name of skillNames) {
   const skillPath = join(PLUGIN, "skills", name, "SKILL.md")
@@ -105,3 +148,4 @@ console.log(`  · marketplace and plugin versions agree (${manifest.version})`)
 console.log(`  · every MCP tool named is real and namespaced for a plugin`)
 console.log(`  · no command shares a name with a skill`)
 console.log(`  · every metric_dictionary path resolves`)
+console.log(`  · every skill and reference named by a command or agent exists`)

@@ -2,11 +2,12 @@
 description: Run only the trust-audit check — claims in the docs checked against the live site, quoting both sides before flagging staleness.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, WebFetch
 argument-hint: [path-or-full] [--workspace <id>]
+skill: docs-analyze
 ---
 
 # /docsbook:run-docs-trust-audit — quick shortcut
 
-Shortcut for `/docsbook:run-docs-analyze --only trust-audit`. See the underlying skill at [docs-trust-audit](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-trust-audit/SKILL.md).
+Shortcut for `/docsbook:run-docs-analyze --only trust-audit`. See the underlying skill at [docs-analyze — third-party-facts check](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/external-checks.md).
 
 ## Workflow
 

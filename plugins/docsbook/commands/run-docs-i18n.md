@@ -2,11 +2,12 @@
 description: Run only the i18n check — translation coverage, staleness, and locale-specific issues across enabled languages.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, mcp__plugin_docsbook_docsbook__get_workspace, mcp__plugin_docsbook_docsbook__list_workspaces
 argument-hint: [path-or-full] [--workspace <id>]
+skill: docs-analyze
 ---
 
 # /docsbook:run-docs-i18n — quick shortcut
 
-Shortcut for `/docsbook:run-docs-analyze --only i18n`. See the underlying skill at [docs-i18n](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-i18n/SKILL.md).
+Shortcut for `/docsbook:run-docs-analyze --only i18n`. See the underlying skill at [docs-analyze — translations detector](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/detectors.md).
 
 Skip automatically if only one language is enabled — same guard as `/docsbook:run-docs-analyze` Step 2.
 

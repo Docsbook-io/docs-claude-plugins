@@ -2,11 +2,12 @@
 description: Run only the content-types check — is each page the right doc type for its job (tutorial vs reference vs how-to vs explanation).
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 argument-hint: [path-or-full] [--workspace <id>]
+skill: docs-analyze
 ---
 
 # /docsbook:run-docs-content-types — quick shortcut
 
-Shortcut for `/docsbook:run-docs-analyze --only content-types`. See the underlying skill at [docs-content-types](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-content-types/SKILL.md).
+Shortcut for `/docsbook:run-docs-analyze --only content-types`. See the underlying skill at [docs-analyze — page-type detector](https://github.com/Docsbook-io/docs-skills/blob/main/skills/docs-analyze/references/detectors.md).
 
 ## Workflow
 
