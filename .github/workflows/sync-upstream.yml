@@ -5,7 +5,8 @@ name: Sync upstream
 # upstream released five times and collapsed 52 skills into 4, and CI stayed green
 # the whole way, because "matches the pin" is true of a pin nobody advances.
 #
-# This job advances it. Hourly, plus on demand. It commits straight to main rather
+# This job advances it. On a push to upstream main (upstream dispatches the event
+# to us), hourly as a backstop, plus on demand. It commits straight to main rather
 # than opening a pull request on purpose — the diff is machine-generated and
 # byte-checked by the same script CI runs, and a bot PR is a notification someone
 # has to act on, which is the thing that already failed here once.
@@ -17,6 +18,18 @@ name: Sync upstream
 # about the other.
 
 on:
+  # Upstream tells us the moment its main moves — docs-skills'
+  # .github/workflows/notify-plugins.yml posts this event on every push to its
+  # main. That is the trigger that matters: a push to upstream main is the exact
+  # event that makes this repository stale.
+  repository_dispatch:
+    types: [upstream-updated]
+  # The cron stays as the backstop, not the mechanism. GitHub does not run
+  # scheduled workflows reliably on a quiet repository — measured here on
+  # 2026-08-29, this job ran at 03:43 UTC and not once in the five hours after,
+  # so an upstream merge could sit unsynced indefinitely. It now catches only
+  # what the notification missed: a dropped webhook, a revoked dispatch token,
+  # or a change that reached upstream main without a push event.
   schedule:
     - cron: "17 * * * *"
   workflow_dispatch:
