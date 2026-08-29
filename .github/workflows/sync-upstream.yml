@@ -15,10 +15,23 @@ name: Sync upstream
 # tool list was missing ten tools the server had gained while the skills were also
 # stale — so a job that refreshed only one would still leave the plugin lying
 # about the other.
+#
+# Hourly used to be the only thing that started it, which made "the plugin is
+# current" true on average and false for up to an hour at a time — long enough
+# for someone to install the marketplace plugin between an upstream release and
+# the sync that carries it. docs-skills now fires `upstream-push` at this
+# workflow from its own push-to-main job, so the usual path is seconds rather
+# than a fraction of an hour. The cron stays, and is the reason this is a
+# backstop rather than a dependency: it covers the dispatches that never arrive
+# — a lapsed token, an API 500, a period where the sending workflow is broken —
+# and the MCP tool list, which drifts on the server's schedule and not on any
+# push here.
 
 on:
   schedule:
     - cron: "17 * * * *"
+  repository_dispatch:
+    types: [upstream-push]
   workflow_dispatch:
 
 permissions:
