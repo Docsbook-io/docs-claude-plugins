@@ -1,8 +1,8 @@
 ---
 name: docs-analyze
-description: Find out what is actually wrong with documentation that already exists, and fix it. Starts from the numbers — search positions, AI-answer and citation signals, reader behaviour, funnels — locates the page or the section that is losing people, brings in the detectors that say what exactly is broken there, states the finding in business terms, checks whether a change like it has ever worked before, and then applies the fix through whichever route you choose. Reads the goals and funnels the owner declared as the one signal that measures the docs against their own stated purpose, and says what a given shape of those numbers actually means before anything is rewritten. Also audits the demand side: what the product can do, which jobs and audiences that serves, and which of them the docs never address at all — the gap no number can show, because a page that does not exist has no traffic. Use when asked why traffic dropped, why readers leave, what to fix first, audit our docs, run an SEO or GEO check, why nobody clicks, where do we lose people, why nobody converts, did that change work, who else could use this, which use cases are we missing, which pages should we write, audit our audiences, что не так с документацией, почему упал трафик, где теряем читателей, кому ещё нужен наш продукт, каких страниц нам не хватает.
+description: Find out what is actually wrong with documentation that already exists, and fix it. Starts from the numbers — search positions, AI-answer and citation signals, reader behaviour, funnels — locates the page or the section that is losing people, brings in the detectors that say what exactly is broken there, states the finding in business terms, checks whether a change like it has ever worked before, and then applies the fix through whichever route you choose. Reads the goals and funnels the owner declared as the one signal that measures the docs against their own stated purpose, and says what a given shape of those numbers actually means before anything is rewritten. Also audits the demand side: what the product can do, which jobs and audiences that serves, and which of them the docs never address at all — the gap no number can show, because a page that does not exist has no traffic. Runs the audit through fifteen named perspectives — capability map, jobs to be done, semantic authority, search intent, programmatic families, free tools, original research, AI-search citability, competitors, the words readers actually use, content architecture, the link graph, trust signals, linkable assets and market expansion — and a router that decides which two to four of them the question and the available evidence actually call for, instead of running all of them. Use when asked why traffic dropped, why readers leave, what to fix first, audit our docs, run an SEO or GEO check, why nobody clicks, where do we lose people, why nobody converts, did that change work, who else could use this, which use cases are we missing, which pages should we write, audit our audiences, что не так с документацией, почему упал трафик, где теряем читателей, кому ещё нужен наш продукт, каких страниц нам не хватает.
 metadata:
-  version: 2.2.0
+  version: 2.3.0
   category: analysis
   mode: orchestrator
   measures:
@@ -31,7 +31,7 @@ metadata:
   accelerated_by:
     - markdown-lsp      # graph/semantic search over the docs folder (self-hosted) — faster & cheaper than grep
     - docsbook-mcp      # search rankings, reader behaviour and the doc graph in the cloud, if a workspace is connected
-  keywords: [audit, analysis, seo, geo, aeo, analytics, metrics, traffic-drop, dead-end, funnel, goals, conversion, activation, rankings, ctr, why, diagnose, triage, fix-queue, change-impact, use-cases, jobs-to-be-done, audience, personas, coverage-gap, content-gap, opportunity, adjacent-markets, что-не-так, почему-упал-трафик, цели, воронка, кому-нужен, каких-страниц-не-хватает]
+  keywords: [audit, analysis, seo, geo, aeo, analytics, metrics, traffic-drop, dead-end, funnel, goals, conversion, activation, rankings, ctr, why, diagnose, triage, fix-queue, change-impact, use-cases, jobs-to-be-done, audience, personas, coverage-gap, content-gap, opportunity, adjacent-markets, router, perspectives, lens, topical-authority, semantic-seo, entities, search-intent, serp, programmatic-seo, free-tools, calculator, original-research, benchmark, ai-search, citability, competitors, market-gap, comparison, user-language, vocabulary, terminology, content-architecture, information-architecture, internal-linking, knowledge-graph, orphans, eeat, trust, authorship, backlinks, digital-pr, linkable-assets, market-expansion, verticals, что-не-так, почему-упал-трафик, цели, воронка, кому-нужен, каких-страниц-не-хватает, конкуренты, какими-словами-ищут, перелинковка, доверие, новые-рынки]
 ---
 
 # docs-analyze — From a number to a fix that shipped
@@ -49,6 +49,32 @@ There is one thing the numbers structurally cannot say, and phase 2 carries it: 
 | `docs-manage` | Owns every writing and configuration rule. When this skill decides a page needs rewriting, `docs-manage` decides what the new text says. Never restate its rules; load it. |
 | `docs-create` | Owns pages that do not exist yet. A gap this skill finds is handed over, never written here. |
 | `docs-automate` | Turns a finding you keep re-finding into a monitor or an alert, so the next occurrence arrives on its own. |
+
+## The perspectives, and the router that picks them
+
+Phase 2 does not have one method. It has fifteen, each a lens on the same documentation that finds a class of problem the others structurally cannot see, and each loaded on demand from `references/perspectives/`. Running all fifteen is not thoroughness — it is a document nobody finishes.
+
+`references/audit-router.md` is the decision procedure, and it holds three rules the whole skill obeys: route on the shape of the question and the evidence in hand rather than the topic word in it; load a lens only if it can find something no already-selected lens can; and let measured beat inferred at every level. **Read the router before choosing a lens.** Two to four is a run; five or more means the request was not scoped.
+
+| Perspective | The finding only it produces |
+|---|---|
+| `references/opportunity-audit.md` | A job, audience or workflow with no page at all — invisible in every number |
+| `perspectives/jobs-to-be-done.md` | The belief a reader must hold to switch, and the earliest rung no page carries |
+| `perspectives/semantic-seo.md` | A concept absent from the corpus's vocabulary entirely — no page to detect it on |
+| `perspectives/search-intent.md` | A page that ranks and is the wrong *shape* for the question it ranks on |
+| `perspectives/programmatic-seo.md` | A demand pattern visible only across a page family, never page by page |
+| `perspectives/free-tools.md` | A reader need whose correct answer is a widget, not a paragraph |
+| `perspectives/original-research.md` | First-party data the product sits on and has never published |
+| `perspectives/geo-ai-search.md` | The reader who got their answer and never arrived; the structurally uncitable page |
+| `perspectives/competitors.md` | What the market documents that you do not — and what you own and undersell |
+| `perspectives/user-language.md` | The right page, unreachable because it is written in the company's words |
+| `perspectives/content-architecture.md` | A defect present in no single page, visible only across all of them |
+| `perspectives/internal-linking.md` | Graph topology — islands, sinks, missing edges — that per-page checks cannot see |
+| `perspectives/eeat-trust.md` | A corpus that is factually right and still not believed |
+| `perspectives/backlinks-digital-pr.md` | Whether anything here is worth citing, and which earned links are being wasted |
+| `perspectives/market-expansion.md` | Which candidate market survives its gates, and what entering costs in pages |
+
+Every one of them runs in `audit` mode: it reads, it reports, it writes nothing. Missing pages go to `docs-create`, rewrites and configuration to `docs-manage`, anything recurring to `docs-automate`.
 
 ## Phases and their modes
 
@@ -95,6 +121,8 @@ A number tells you a page is failing. It does not tell you why, and the four rea
 Mislabelling is expensive: writing a new page when the real problem was the title costs a week and does not work. **Unserved** is the one nobody checks for, because its symptom is silence.
 
 Once the failure mode is known, bring in only the detectors that can explain it. `references/detectors.md` holds the content detectors (page type, structure, style, audience, links, accessibility, media, freshness, translations) with their severity tables. `references/signals.md` holds the behavioural ones (dead ends, routes and funnels, question clusters, engagement, campaign traffic, reader cohorts, buying stage, the striking-distance band, rejected searches). `references/goal-signals.md` holds the declared ones — goals and funnels — with the pairs that disambiguate them and the worked readings for the shapes that mean opposite things depending on what sits beside them. `references/external-checks.md` holds the claims that decay without anyone touching them — prices against the live pricing page, third-party facts against their source, coverage against a named competitor.
+
+Detectors are not the whole of phase 2. They answer **unhelpful**; the other three failure modes are answered by the perspectives above, and `references/audit-router.md` decides which of them this question and this evidence tier actually call for. Do not pick a lens by the topic word in the request — that is the misroute the router exists to prevent, and it costs a quarter of the wrong work.
 
 Run detectors in parallel where they are independent. Run the ones that need the full graph — link and orphan analysis, duplicate titles, translation parity — after the graph is built. Deduplicate across detectors: one line flagged twice is reported once, at the higher severity, naming both.
 
@@ -147,6 +175,8 @@ Apply the rules in `references/apply.md`: one recommendation per page per run, m
 - **Do not run search analysis on private or internal docs.** It only applies to public pages.
 - **Do not write in phases 1–4**, and do not cross into phase 5 without the apply gate answered.
 - **Do not create pages here.** A gap is handed to `docs-create`.
+- **Do not load a perspective whose firing condition is unmet**, however precisely the user named it. Say why it does not apply and route to the lens that does — a correct answer to the wrong question reads as "the audit found nothing".
+- **Do not run a perspective above its evidence tier.** Degrade it or skip it, and say which, once, at the top.
 - **Never invent a capability.** Every use case, audience, workflow and market in the demand-side pass traces to something the source actually showed. A page commissioned for a feature the product does not have is the most expensive output this skill can produce.
 - **Never present a potential audience, integration or market as an existing one**, and never attach a search volume to a phrasing this skill reasoned its way to.
 - **Never let an opportunity score outrank a measured failure.** Reasoning about who might arrive loses to a page that is demonstrably losing the readers who did.
@@ -160,7 +190,9 @@ Apply the rules in `references/apply.md`: one recommendation per page per run, m
 - [ ] Every page in the queue carries its raw counts, its dominant signal, and a `measured` or `hypothesis` label.
 - [ ] Each item is labelled missing / unhelpful / unfindable / unserved, and missing and unserved items are handed to `docs-create` rather than rewritten.
 - [ ] Where the demand-side pass ran: its output is labelled `hypothesis` throughout, every use case names the capabilities it rests on, and no opportunity was ranked above a measured failure.
-- [ ] Cross-detector duplicates merged — no line reported twice.
+- [ ] The perspectives that ran were chosen through `references/audit-router.md`, between one and four of them, each with its firing condition stated in one line.
+- [ ] Any perspective that could not run at this evidence tier was named once with what it would have added, and skipped rather than degraded silently.
+- [ ] Cross-detector and cross-perspective duplicates merged — no line reported twice, and a merged line names both lenses.
 - [ ] Findings presented in plain language, worst first, with evidence quoted verbatim; no JSON handed to a person as the answer.
 - [ ] Where goals or funnels were read, every matcher was verified to resolve, the definition was unchanged inside the window, and every funnel rate carries the share of traffic that entered step 1.
 - [ ] Prior comparable changes checked and a verdict given, or a baseline recorded because none existed.
