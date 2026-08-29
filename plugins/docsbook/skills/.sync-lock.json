@@ -1,8 +1,8 @@
 {
   "upstream": "Docsbook-io/docs-skills",
   "branch": "main",
-  "ref": "7182b339a874bf4dd0c5e9088fe0ee9b69eefed4",
-  "tarball_sha256": "66b31a34f7fcc2115efbf35c8a30bef7856d46cbbd801063eb1cd76bd5e7e966",
+  "ref": "aa1583ab4bad6ad58dde976c14f612274d86ca30",
+  "tarball_sha256": "465ed92d08b8e4c4f5bd65c31ee92d9b604966e5100209858f0242d4c40ec999",
   "skill_count": 4,
   "file_count": 45,
   "files": {
